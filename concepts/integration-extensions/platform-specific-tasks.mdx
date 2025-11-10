@@ -1,0 +1,251 @@
+---
+title: "Platform-Specific Tasks"
+description: "See how Task supports targeting commands to specific operating systems or architectures, enabling truly cross-platform build and automation flows."
+---
+
+# Platform-Specific Tasks
+
+Task empowers you to create truly cross-platform automation workflows by allowing you to target tasks and individual commands to specific operating systems (GOOS) and architectures (GOARCH). This feature ensures that your Taskfiles adapt seamlessly to the platform on which they are run, enabling conditional execution that respects the nuances and specific needs of different environments without manual intervention.
+
+---
+
+## Why Platform-Specific Tasks Matter
+
+Imagine you maintain a build automation workflow that must support Windows, Linux, macOS, and various CPU architectures like amd64 or arm64. Some commands or scripts only make sense on certain platforms—for example, using `msbuild` on Windows or specific shell scripts on Linux. Manually adjusting your Taskfile for each platform creates complexity and risks errors.
+
+Platform-specific tasks let you declare once where and when parts of your workflow run, simplifying maintenance and enhancing reliability:
+
+- **Precise targeting:** Run tasks only on matching OS, architecture, or both.
+- **Cleaner Taskfiles:** Avoid cluttering your definitions with conditional shell code.
+- **Cross-platform automation:** Build workflows that automatically adapt based on host platform.
+
+This feature supports both whole tasks and individual commands with fine granularity.
+
+---
+
+## Core Concept: Platforms in Taskfiles
+
+At its core, platform targeting uses Go's convention of `GOOS` and `GOARCH` values, such as `windows`, `linux`, `darwin` (macOS), and `amd64`, `arm64`. Task allows you to specify the platforms either as OS, architecture, or combined pairs.
+
+### Defining Platforms at the Task Level
+
+A task can declare a `platforms` property with a list of platform identifiers. The task will only run if the current platform matches any of these entries.
+
+```yaml
+# Example Taskfile.yml snippet
+version: '3'
+tasks:
+  build-windows:
+    platforms: [windows]
+    cmds:
+      - echo 'Building for Windows'
+
+  build-linux-amd64:
+    platforms: [linux/amd64]
+    cmds:
+      - echo 'Building for Linux amd64'
+
+  build-arm64:
+    platforms: [arm64]
+    cmds:
+      - echo 'Building for any ARM64 architecture'
+```
+
+In this example:
+- The `build-windows` task runs only on Windows OS, regardless of architecture.
+- `build-linux-amd64` runs only on Linux amd64 architecture.
+- `build-arm64` runs on any platform with ARM64 architecture.
+
+### Defining Platforms at the Command Level
+
+You can apply the same platform targeting to individual commands within a task, enabling mixed-platform commands within a single task.
+
+```yaml
+tasks:
+  build-mixed:
+    cmds:
+      - cmd: echo 'This always runs'
+      - cmd: echo 'Windows only command'
+        platforms: [windows]
+      - cmd: echo 'macOS command'
+        platforms: [darwin]
+```
+
+Only the commands matching the current platform execute, while others are skipped.
+
+---
+
+## How Platform Targeting Works
+
+Task performs platform matching by comparing the current runtime platform's OS and architecture against the specified list:
+
+- If the list is empty or omitted, the task or command runs on all platforms.
+- Each platform entry can be just OS (e.g., `linux`), just architecture (e.g., `amd64`), or a combined string (e.g., `linux/amd64`).
+- A match requires the current platform to satisfy both OS and Arch if both are specified.
+
+The matching logic uses the same conventions as Go's runtime values, so it's consistent and predictable.
+
+---
+
+## Practical Example: Cross-Platform Build Taskfile
+
+```yaml
+version: '3'
+tasks:
+  build-windows:
+    platforms: [windows]
+    cmds:
+      - echo 'Building app for Windows'
+
+  build-linux:
+    platforms: [linux]
+    cmds:
+      - echo 'Building app for Linux'
+
+  build-macos:
+    platforms: [darwin]
+    cmds:
+      - echo 'Building app for macOS'
+
+  build-arm64:
+    platforms: [arm64]
+    cmds:
+      - echo 'Building for ARM64 architecture'
+
+  build-default:
+    cmds:
+      - echo 'Building on any other platform'
+
+  build-mixed:
+    cmds:
+      - cmd: echo 'Always run'
+      - cmd: echo 'Windows specific command'
+        platforms: [windows]
+      - cmd: echo 'Linux amd64 specific command'
+        platforms: [linux/amd64]
+```
+
+Running `task build-windows` on macOS will skip the task entirely, signaling clear platform restrictions without error. In contrast, `build-mixed` will only execute commands appropriate to the platform, skipping irrelevant ones silently.
+
+---
+
+## Under the Hood: Platform Matching Logic
+
+Task's platform filtering runs automatically during task and command execution:
+
+- When a task runs, Task evaluates the task's `platforms` list.
+- If the current platform doesn't match any entry, the task is skipped with a verbose log message (if verbose logging is enabled).
+- For commands with their own `platforms` list, Task applies the same filtering individually.
+
+This evaluation uses a helper function equivalent to:
+
+```go
+func shouldRunOnCurrentPlatform(platforms []*ast.Platform) bool {
+    if len(platforms) == 0 {
+        return true
+    }
+    for _, p := range platforms {
+        if (p.OS == "" || p.OS == runtime.GOOS) && (p.Arch == "" || p.Arch == runtime.GOARCH) {
+            return true
+        }
+    }
+    return false
+}
+```
+
+Thus, platform omission matches all; otherwise, OS and Arch combination must match.
+
+---
+
+## Tips for Effective Platform-Specific Task Usage
+
+- **Combine platform-specific tasks with dependencies** to share common subtasks without platform restrictions.
+- **Use platform targeting sparingly at the command level** only when commands differ significantly by platform, to keep Taskfiles clear.
+- **Use descriptive task names** indicating platform targeting (e.g., `build-windows`, `test-linux-arm64`) for better discoverability.
+- **Leverage Task's verbose logging** to confirm skipping behavior during runs.
+- For complex matrix builds spanning OS and Arch combinations, consider integrating loops and matrix expansions available in related documentation.
+
+---
+
+## Common Pitfalls and How to Avoid Them
+
+<AccordionGroup title="Common Platform-Specific Task Pitfalls">
+<Accordion title="Task Does Not Run on Expected Platform">
+Check:
+- That the `platforms` definition matches Go's runtime values exactly (`windows`, `darwin`, `linux`, etc.).
+- That the architecture usage matches the actual environment (`amd64`, `arm64`).
+- That no conflicting platform restrictions override or conflict.
+</Accordion>
+<Accordion title="Commands Within Task Are Skipped Unexpectedly">
+Verify:
+- Commands have correct `platforms` entries matching current platform.
+- That commands without a `platforms` list are expected to run on all platforms.
+- Use verbose mode to see which commands get skipped.
+</Accordion>
+<Accordion title="Complex Platform Filtering with Variables or Includes Not Applying Correctly">
+Understand that platform filtering applies strictly to the compiled Taskfile during execution.
+Taskfile include merges or variable overrides do not dynamically alter platform filtering beyond what is declared.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Visualizing Platform-Specific Task Execution Flow
+
+```mermaid
+flowchart TD
+  Start["Start Task Execution"] --> CheckTaskPlatform{ "Is Task Platform Match?" }
+  CheckTaskPlatform -- No --> SkipTask["Skip Task Execution"]
+  CheckTaskPlatform -- Yes --> RunDependencies["Run Task Dependencies"]
+  RunDependencies --> RunCommands["Evaluate Commands"]
+
+  subgraph Commands
+    direction TB
+    Cmd1Cmd["Command 1: Check Platform"] --> Cmd1Run{ "Matches Platform?" }
+    Cmd1Run -- Yes --> Cmd1Exec["Execute Command 1"]
+    Cmd1Run -- No --> Cmd1Skip["Skip Command 1"]
+
+    Cmd2Cmd["Command 2: Check Platform"] --> Cmd2Run{ "Matches Platform?" }
+    Cmd2Run -- Yes --> Cmd2Exec["Execute Command 2"]
+    Cmd2Run -- No --> Cmd2Skip["Skip Command 2"]
+
+    Cmd1Skip --> Cmd2Cmd
+    Cmd1Exec --> Cmd2Cmd
+    Cmd2Skip --> End
+    Cmd2Exec --> End
+  end
+
+  RunCommands --> Cmd1Cmd
+  End(["Task Execution Complete"])
+```
+
+This flowchart depicts how Task first confirms the task-level platform applicability before running dependencies and then individually verifies platform matching for every command.
+
+---
+
+## Troubleshooting
+
+### Task Is Being Skipped Without Errors
+- Run Task with `-v` or `--verbose` flags to see skipped task logs.
+- Confirm platforms declared exactly match your runtime `GOOS` and `GOARCH`.
+
+### Commands Not Executing on Intended Platforms
+- Confirm no mismatched or conflicting `platforms` on both task and commands.
+- Commands without `platforms` always run.
+
+### Invalid Platform String Errors
+- Ensure platform strings are valid according to Go's OS and architecture naming.
+(see [Taskfile Platforms Parsing](https://pkg.go.dev/github.com/go-task/task/v3/taskfile/ast#Platform) for valid inputs)
+
+---
+
+## Related Documentation & Next Steps
+
+- [Tasks and the Taskfile](https://taskfile.dev/overview/core-concepts/tasks-and-taskfiles): Learn how tasks are structured and composed.
+- [Conditional Execution, Matrix Builds, and Loops](https://taskfile.dev/guides/advanced-features-patterns/conditional-tasks-matrix-for): Explore advanced conditionals and loops for more flexible platform automation.
+- [Task Execution Lifecycle](https://taskfile.dev/concepts/core-architecture/executor-flow): Understand how tasks are processed and executed, including platform filtering.
+- [Variables and Environment Management](https://taskfile.dev/guides/advanced-features-patterns/variables-envs): Combine platform targeting with environment variables for dynamic workflows.
+
+---
+
+Harness Task’s platform-specific targeting to create robust, adaptable automation workflows that save time and reduce errors across diverse operating systems and architectures.
