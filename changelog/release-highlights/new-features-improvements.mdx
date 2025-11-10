@@ -1,0 +1,120 @@
+---
+title: "New Features and Improvements"
+description: "Detailed breakdowns of major new capabilities, enhancements, or optimizations introduced in each release. This page empowers users to discover and take advantage of product evolution."
+---
+
+# New Features and Improvements
+
+This page provides a comprehensive overview of the key new features, enhancements, and optimizations introduced in each recent release of Task. Designed to empower users to discover and fully leverage product evolution, the documentation highlights significant capabilities alongside migration notes and user impact.
+
+---
+
+## Major New Features
+
+### Built-In Core Utilities on Windows (v3.45.3)
+To improve out-of-the-box compatibility on Windows, Task now includes built-in core utilities like `cp`, `mv`, and `mkdir`. This means commands using these common tools operate smoothly on Windows without users needing extra setup. This long-awaited enhancement removes a major friction point for Windows users and simplifies cross-platform Taskfiles.
+
+### Support for Global Configuration Files (v3.45.3)
+Global configuration files are now supported in standard OS config locations such as `$XDG_CONFIG_HOME/task/taskrc.yml` and `$HOME/.taskrc.yml`. This centralizes user and system preferences, such as concurrency and verbosity options, allowing consistent configuration across projects and environments.
+
+### Experimental Features Integration and Flagging (Ongoing)
+Breaking changes and highly requested new features are introduced as experimental flags enabled via the `.taskrc.yml` or environment variables. This lets users opt in safely and test in-situ, enabling smoother transitions to future major releases. For example, the "Gentle Force" experiment modifies how the `--force` flag behaves by only forcing the directly called task, with a new `--force-all` flag replicating prior behavior.
+
+### Enhanced Task Listing and JSON Output (v3.45.3)
+The `--list --json` output has new options such as the `--nested` flag, which produces nested task structures fitting tasks with namespaces naturally. This greatly facilitates programmatic consumption of task information, such as in integrations with code editors or tooling workflows.
+
+### New Template Functions and Variables (v3.44.0)
+Several new template functions and variables have been added to boost Taskfile expressiveness:
+
+- `uuid`, `randInt`, and variants to generate random values.
+- `toYaml` and `fromYaml` for YAML processing.
+- `CLI_ARGS_LIST` array variable contains CLI arguments after `--` in array form.
+- `task` field in JSON listing output to identify the originating task.
+
+These empower advanced automation, dynamic inputs, and more precise task control.
+
+### Remote Taskfiles Enhancements (Various Releases)
+The remote Taskfiles experiment continues to mature:
+
+- Support for including Taskfiles from remote Git repositories.
+- Cached remote Taskfile usage with improved priority and expiry.
+- Redaction of credentials in logs for security.
+- Ability to pin included Taskfiles via checksum for integrity.
+
+These improvements encourage robust and secure modular workflows across distributed repositories.
+
+### Watcher Improvements (v3.43.1)
+Migrating from a polling-based watcher to OS-native APIs using `fsnotify` drastically improves performance and responsiveness when watching files for changes. The default watch interval was lowered from 5s to 100ms to better fit the new event-based model.
+
+### Multi-Level Includes and Variable Passing (v3.12.0)
+Task now supports multi-level `includes`, allowing included Taskfiles to include others recursively. Moreover, users can specify variables for included Taskfiles, enabling deeper modularization and parameterization.
+
+---
+
+## Enhancements & User Experience Improvements
+
+- **Task Sorting Control:** Users can customize task order with `--sort` (default, alphanumeric, or none) for task listings.
+- **Output Configuration:** New output grouping options enable printing grouped command outputs with customizable start/end messages, and the ability to show output only on error.
+- **Verbose and Silent Modes:** Improved granular control over logs, including silent mode to disable echoing and enhanced verbose output of task start/stop events.
+- **Completion Scripts:** A new `--completion` flag standardizes shell completion generation, with deprecated older scripts noted.
+- **Platform Filtering:** Tasks support `platforms:` attribute at task and command levels for precise OS/architecture targeting.
+
+---
+
+## Stability and Bug Fixes
+
+- Fixed numerous bugs including panics on empty or malformed Taskfiles.
+- Resolved issues with dynamic variables not running in expected contexts.
+- Corrected inconsistencies in fingerprinting and up-to-date status detection.
+- Bug fixes in shell completions for various shells (zsh, fish, PowerShell).
+- Fixed environment variable inheritance and exporting inconsistencies.
+- Addressed task listing regressions and task aliasing issues.
+
+---
+
+## CLI Flag and Behavior Changes
+
+- The `--force` flag behavior is changed under the "Gentle Force" experimental flag. It now only forces the directly called task by default, with `--force-all` maintaining the old behavior of forcing dependent tasks.
+- New flags added in experimental features for remote Taskfiles include `--download`, `--offline`, `--clear-cache`, and `--expiry`.
+- The new `--nested` flag for JSON task listing allows output in nested namespace format.
+- The `--global` (`-g`) flag allows running Taskfiles from the user's home directory, facilitating system-wide automation.
+
+---
+
+## Practical Tips for Users
+
+1. **Leverage experiments:** Enable experimental flags safely in `.taskrc.yml` or environment variables to try out new, potentially breaking features ahead of full release.
+2. **Use global config:** Place a `.taskrc.yml` in your home directory to standardize your Task usage across projects.
+3. **Prefer `--nested` and `--json` for tooling:** When integrating with tools or editors, use the nested JSON output to better represent task namespace hierarchy.
+4. **Watch for deprecations:** Avoid using deprecated features like version 2 schema which has been removed, and migrate early for smooth upgrades.
+5. **Take advantage of new template functions:** Use advanced random generators, YAML helpers, and CLI arguments arrays to create more flexible Taskfiles.
+
+---
+
+## Migration and Compatibility Notes
+
+- Version 2 schemas are officially deprecated and no longer supported from v3.34.0 onward.
+- The introduction of experimental flags means some breaking changes can appear in minor versions but are opt-in.
+- The `--force` flag change under Gentle Force experiment requires checking your scripts and replacing `--force` with `--force-all` if forcing all dependencies is still desired.
+- Upgrading your tooling and completion scripts to the new `--completion` flag approach is recommended.
+
+---
+
+## Additional Resources
+
+To master these new capabilities and ensure smooth adoption, consult the following related documentation pages:
+
+- [Experiments Guide](https://taskfile.dev/docs/experiments/index.md) — Learn how to enable and manage experimental features.
+- [CLI Reference](https://taskfile.dev/reference/cli/) — Complete list of flags including new and changed ones.
+- [Taskfile Structure and Best Practices](https://taskfile.dev/guides/getting-started-workflows/taskfile-structure-best-practices) — How to organize complex Taskfiles effectively.
+- [Variables and Environment Handling](https://taskfile.dev/overview/core-concepts/variables-and-environment) — Using new template functions and advanced variable options.
+- [Remote Taskfiles Experiment](https://taskfile.dev/experiments/remote-taskfiles) — Details on including Taskfiles from remote locations.
+- [Gentle Force Experiment](https://taskfile.dev/experiments/gentle-force) — How the `--force` flag behavior changes and migration instructions.
+
+---
+
+Explore the [Changelog](https://taskfile.dev/changelog/) for detailed release notes, and keep your Task installation up to date to benefit from the latest enhancements and fixes.
+
+<Check>
+For up-to-date release notes and migration strategies, visit the [official changelog page](https://taskfile.dev/changelog/).
+</Check>
