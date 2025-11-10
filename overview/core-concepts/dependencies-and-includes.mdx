@@ -1,0 +1,201 @@
+---
+title: "Dependencies and Includes"
+description: "Discover how Task enables complex workflows through task dependencies and includes. Understand how tasks can depend on one another, how Taskfiles can reference or include other Taskfiles (even remotely), and the implications for modular, scalable automation."
+---
+
+# Dependencies and Includes
+
+## Empower Your Automation with Task Dependencies and Taskfile Includes
+
+Task is designed to enable complex, modular, and scalable automation workflows through its powerful support for task dependencies and Taskfile includes. This page unpacks how you can orchestrate tasks that depend on one another and compose your automation logic by referencing or including other Taskfiles — even from remote sources.
+
+---
+
+## What Are Dependencies and Includes?
+
+### Task Dependencies
+
+Dependencies define a clear execution order by specifying that certain tasks must be completed before another task runs. With dependencies, you craft workflows where tasks can be composed of smaller, reusable subtasks, ensuring reliability and maintainability.
+
+### Taskfile Includes
+
+Includes allow you to reference entire Taskfiles inside your main Taskfile. This feature enables breaking down your automation into modular, reusable pieces — ideal for large projects or teams sharing common task definitions. Includes can point to local files, remote HTTP URLs, or Git repositories, allowing flexible and scalable automation.
+
+---
+
+## How Dependencies Work in Task
+
+Each task in a Taskfile can declare one or more dependencies. When you run a parent task, Task automatically resolves and executes its dependencies first, respecting the defined order.
+
+**Key benefits:**
+- **Clear execution flow:** Dependencies ensure tasks run in the right sequence.
+- **Reusability:** Define common subtasks once and reuse by declaring them as dependencies.
+- **Parallel and conditional execution:** Fine-tune execution using other Task features (e.g., preconditions).
+
+### Syntax Example for Dependencies
+
+```yaml
+version: "3"
+tasks:
+  build:
+    deps:
+      - compile
+      - test
+
+  compile:
+    cmds:
+      - go build ./...
+
+  test:
+    cmds:
+      - go test ./...
+```
+In this example, running `task build` first triggers `compile` and `test` tasks.
+
+---
+
+## Includes: Composing Automation Across Files and Repositories
+
+Includes empower you to structure automation across multiple files or projects. Your Taskfile can include other Taskfiles with optional namespaces to prevent name collisions.
+
+### Features of Includes
+
+- **Local and remote references:** Includes can be local file paths, URLs over HTTP/HTTPS, or Git repositories.
+- **Namespace support:** Each included Taskfile is assigned a namespace (default is the include key), allowing task calls like `namespace:taskname`.
+- **Variable overrides:** Pass variables into included Taskfiles to customize behavior.
+- **Optional includes:** Mark includes as optional to avoid errors if not found.
+- **Advanced options:** Exclude tasks, alias includes, flatten structure, and checksum validation.
+
+### Example: Including Multiple Taskfiles with Variables
+
+```yaml
+version: "3"
+
+includes:
+  shared:
+    taskfile: common/Taskfile.yml
+    vars:
+      ENV: production
+  utils:
+    taskfile: https://example.com/repo/Taskfile.utils.yml
+    optional: true
+
+tasks:
+  deploy:
+    cmds:
+      - task: shared:prepare
+      - task: utils:cleanup
+```
+This configuration merges tasks from local `common/Taskfile.yml` and a remote Taskfile, then calls tasks with explicit namespaces.
+
+---
+
+## Behind the Scenes: Taskfile Graph and Merging
+
+When you read a Taskfile with includes, Task builds a Directed Acyclic Graph (DAG) of Taskfiles representing inclusion relationships. Task then merges included Taskfiles into the main Taskfile, preserving their namespaces and variables, forming a unified execution plan. This methodology:
+
+- Prevents cyclical includes.
+- Ensures consistent variable scoping and merging.
+- Handles conflicts and merging order gracefully.
+
+---
+
+## Practical Tips for Using Dependencies and Includes
+
+- **Name tasks clearly:** When using includes and namespaces, adopt naming conventions for clarity.
+- **Pass variables for flexibility:** Use the `vars` attribute in includes to inject contextual data.
+- **Avoid dotenvs in included Taskfiles:** Dotenv declarations must reside in the root Taskfile.
+- **Use optional includes to enhance resilience:** Mark remote or less-critical includes optional to prevent failures.
+- **Flatten includes carefully:** Flatten merges tasks without their namespace prefix, which can be handy but risks name collisions.
+
+---
+
+## Common Pitfalls and How to Avoid Them
+
+- **Version mismatches across included Taskfiles:** Task requires all included Taskfiles to have matching versions (e.g., all version 3).
+- **Including Taskfiles with dotenv declarations:** This results in an error, since dotenv loading must happen only in the main Taskfile.
+- **Namespace conflicts:** Be mindful of overlapping namespaces or task names that can create ambiguous calls.
+
+---
+
+## Example Workflow: Modular CI Setup
+
+Imagine a project where:
+
+- A root Taskfile includes `lint`, `test`, `build`, and `deploy` from separate Taskfiles (shared across projects).
+- Each included Taskfile is managed and versioned separately.
+- Dependencies enforce the order such that linting runs before testing, testing before building, and building before deploying.
+
+Your main Taskfile leverages includes to avoid duplicating common tasks, passing environment-specific variables, and orchestrating a clean, maintainable CI flow.
+
+---
+
+## Visualizing Taskfile Includes and Dependencies
+
+```mermaid
+graph TD
+  RootTaskfile["Root Taskfile"] -->|Includes "shared"| SharedTaskfile["shared: Taskfile"]
+  RootTaskfile -->|Includes "utils"| UtilsTaskfile["utils: Taskfile"]
+
+  subgraph shared
+    CompileTask["compile"]
+    TestTask["test"]
+    BuildTask["build"]
+    BuildTask --> CompileTask
+    BuildTask --> TestTask
+  end
+
+  subgraph utils
+    CleanupTask["cleanup"]
+  end
+
+  RootTaskfile -->|Depends on "shared:build"| BuildTask
+  RootTaskfile -->|Depends on "utils:cleanup"| CleanupTask
+```
+
+This diagram shows how Task composes included Taskfiles with namespaces and dependencies to form a complete workflow.
+
+---
+
+## Getting Started with Dependencies and Includes
+
+1. **Start simple:** Begin by adding dependencies to tasks within your single Taskfile.
+2. **Modularize:** Split common or complex task groups into separate Taskfiles.
+3. **Use includes:** Reference these Taskfiles in your main Taskfile with the `includes` section.
+4. **Leverage namespaces:** Use namespaces to avoid naming conflicts and enable clear task calls.
+5. **Pass variables:** Use `vars` in includes to customize task behavior per context.
+
+For detailed syntax and examples, see our Guides on [Managing Task Dependencies and Including Other Taskfiles](https://taskfile.dev/guides/advanced-features-patterns/task-dependencies-includes).
+
+---
+
+### Troubleshooting
+
+<AccordionGroup title="Common Issues with Dependencies and Includes">
+<Accordion title="Included Taskfile Has Dotenv Declaration">
+Including Taskfiles that declare dotenv variables causes errors. Move dotenv declarations to your main Taskfile only.
+</Accordion>
+<Accordion title="Taskfile Version Mismatch">
+Ensure all your included Taskfiles specify the same Taskfile version to prevent merging failures.
+</Accordion>
+<Accordion title="Namespace Conflicts">
+Avoid overlapping namespaces and duplicated task names across includes to prevent ambiguous task references.
+</Accordion>
+<Accordion title="Missing Included Taskfile">
+If an included Taskfile is remote or optional, verify `optional: true` to prevent failure when it cannot be fetched.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Learn More
+- [Tasks and the Taskfile](/overview/core-concepts/tasks-and-taskfiles) — Understand task definitions and core syntax
+- [Variables and Environment Handling](/overview/core-concepts/variables-and-environment) — Manage variables within and across Taskfiles
+- [Managing Task Dependencies and Including Other Taskfiles](https://taskfile.dev/guides/advanced-features-patterns/task-dependencies-includes) — Advanced usage and patterns
+
+---
+
+## Summary
+Dependencies and includes are the fundamental building blocks for creating automated workflows in Task. By defining task dependencies, you control execution order seamlessly. Includes let you modularize and scale your automation scripts by composing multiple Taskfiles in a clear, maintainable way. Whether your Taskfiles reside locally, on a remote server, or in version control, Task merges and orchestrates them into a powerful build graph that aligns with your project’s complexity.
+
+Start simple, modularize effectively, and embrace the power of dependencies and includes to unlock scalable automation with Task.
