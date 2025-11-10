@@ -1,0 +1,221 @@
+---
+title: "Feature Flags and Experimental Features"
+description: "Explore how Task uses feature flags and an experimentation system to roll out, test, and enable new capabilities in a controlled manner. Learn how to opt-in, configure, and safely use experimental features."
+---
+
+# Feature Flags and Experimental Features
+
+Explore how Task uses feature flags and an experimentation system to roll out, test, and enable new capabilities in a controlled manner. Learn how to opt-in, configure, and safely use experimental features.
+
+---
+
+## Introduction to Feature Flags and Experiments
+
+As Task continues to evolve rapidly, managing new features—especially those that introduce breaking changes—requires a structured process to ensure stability and provide users with early access to upcoming capabilities without disruption.
+
+Feature flags and experimental features in Task serve this purpose by allowing users to opt-in to new, potentially unstable, features on a per-environment or per-project basis.
+
+This controlled approach enables the Task team to gather real-world feedback and make iterative improvements before fully integrating these features into stable releases.
+
+<Info>
+Experimental features are not guaranteed to be stable and may be removed or changed without notice. They are intended solely for testing and feedback, so do not use them in production environments.
+</Info>
+
+---
+
+## What Are Feature Flags and Experimental Features?
+
+Feature flags are toggles that allow selectively enabling or disabling specific functionality in Task. When a feature is marked as "experimental," it means it is behind such a flag, typically disabled by default, requiring explicit activation to use.
+
+### Benefits of Task's Experimentation System
+
+- **Early Access:** Try new capabilities before official release.
+- **Controlled Rollout:** Avoid forcing breaking changes on all users at once.
+- **Feedback Loop:** Give feedback to improve features before stabilization.
+- **Safe Testing:** Enable experiments per user, machine, or project.
+
+---
+
+## How to Enable Experimental Features
+
+Task detects if an experimental feature is enabled primarily through environment variables prefixed with `TASK_X_` followed by the experiment's name. Setting these variables activates the feature.
+
+### Setting Experiment Flags
+
+There are three main ways to enable an experimental feature:
+
+1. **One-Off Command Invocation:**
+
+    Prefix your Task command with the environment variable:
+
+    ```shell
+    TASK_X_FEATURE=1 task my-task
+    ```
+
+    - Ideal for temporary testing.
+
+2. **Per-User Permanent Enablement:**
+
+    Add the environment variable to your shell config file (e.g., `.bashrc`, `.zshrc`):
+
+    ```shell
+    export TASK_X_FEATURE=1
+    ```
+
+    - Enables the experiment for all Task invocations by your user.
+
+3. **Per-Project Configuration:**
+
+    Use a `.env` or `.taskrc.yml` file alongside your root Taskfile.
+
+    - `.env` example:
+
+      ```shell
+      TASK_X_FEATURE=1
+      ```
+
+    - `.taskrc.yml` example:
+
+      ```yaml
+      experiments:
+        FEATURE: 1
+      ```
+
+    - Project-level enabling affects all users who check out the project and use Task, ensuring consistent behavior.
+
+<Note>
+When both `.env` and `.taskrc.yml` files exist, values in `.taskrc.yml` take precedence.
+</Note>
+
+---
+
+## Understanding Experiment Values
+
+Some experiments support multiple versions or variations distinguished by integer values (e.g., `=1`, `=2`). Users can set the variable to the particular value representing the desired proposal or iteration to enable.
+
+Example:
+
+```shell
+TASK_X_FEATURE=2 task my-task
+```
+
+---
+
+## Lifecycle of an Experiment
+
+Each experiment follows a clear progression to ensure well-tested integration into Task:
+
+1. **Proposal:**
+
+   - Begins as a GitHub issue labeled `status: proposal`.
+   - Community feedback is requested to guide design.
+
+2. **Draft:**
+
+   - Initial implementation merged with experimental flags.
+   - Available for broader testing but unstable; breaking changes may occur.
+
+3. **Candidate:**
+
+   - Reached consensus; changes become minor and infrequent.
+   - Allows last chance for community comment.
+
+4. **Stable:**
+
+   - Feature is considered stable and will remain backward compatible.
+   - Encouraged for use in production.
+
+5. **Released:**
+
+   - Incorporated by default in a new major version.
+   - Flags are removed as the behavior is the new default.
+
+6. **Abandoned or Superseded:**
+
+   - If feedback is negative or the feature is no longer needed, it may be removed.
+
+---
+
+## Common Experimental Features in Task
+
+- **Gentle Force:** Introduces refined control over task execution forcing.
+- **Remote Taskfiles:** Enables downloading and caching remote Taskfiles.
+- **Environment Precedence:** Alters environment variable merging behavior.
+
+Refer to the documentation sidebar or [official experiments page](https://taskfile.dev/experiments) for the latest active experiments and their detailed info.
+
+---
+
+## Practical Tips and Best Practices
+
+- **Use Experiments for Testing, Not Production:** Avoid enabling in critical workflows until stability is declared.
+- **Leverage Project-Level Enablement:** For team consistency, place experiment flags in `.taskrc.yml` under source control.
+- **Provide Feedback:** Engage via GitHub issues or discussions linked from the experiment’s proposal.
+- **Combine with Verbose Logging:** Use `--verbose` flag to troubleshoot experimental feature behavior.
+
+---
+
+## Troubleshooting and Validation
+
+### Checking Active Experiments
+
+Run:
+
+```shell
+task --experiments
+```
+
+This lists all enabled experiments for your current environment.
+
+### Validating Experiment Flags
+
+Task validates that experiment flags are allowed and active; invalid or inactive flags produce errors preventing execution.
+
+### Common Pitfalls
+
+- Typographical errors in environment variables (e.g., missing `TASK_X_` prefix) will prevent activation.
+- Conflicting flags in CLI may cause unexpected behavior.
+- Some experiments require specific Taskfile versions or configurations.
+
+---
+
+## Example: Enabling "Gentle Force" Experiment
+
+1. Temporarily enable for a single run:
+
+   ```shell
+   TASK_X_GENTLE_FORCE=1 task build
+   ```
+
+2. Persistently enable for your shell session:
+
+   ```shell
+   export TASK_X_GENTLE_FORCE=1
+   task build
+   ```
+
+3. Enable for your entire project by adding to `.taskrc.yml`:
+
+   ```yaml
+   experiments:
+     GENTLE_FORCE: 1
+   ```
+
+---
+
+## Internal Usage and Flag Integration
+
+Task parses experimental flags early in its initialization to influence CLI flag behavior. For example, the `Gentle Force` experiment modifies how force flags work and introduces `--force-all`. The `Remote Taskfiles` experiment adds new flags like `--download` and `--offline`.
+
+This ensures experimental features integrate naturally into the user experience while keeping backward compatibility intact for stable features.
+
+---
+
+## Further Reading and References
+
+- [Experiments Guide](https://taskfile.dev/docs/experiments/) — Detailed explanations and current experiments
+- [Configuration and Taskrc Principles](/concepts/core-architecture/configuration-hierarchy) — How `.taskrc.yml` files are merged and prioritized
+- [CLI Reference](/reference/cli/) — How to use Task's command line options
+- [Task Execution Lifecycle](/concepts/core-architecture/executor-flow) — Understanding how experiments impact execution
+
+---
