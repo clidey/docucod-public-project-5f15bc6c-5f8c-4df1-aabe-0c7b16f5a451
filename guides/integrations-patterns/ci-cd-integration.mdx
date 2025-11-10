@@ -1,0 +1,253 @@
+---
+title: "Integrating Task into CI/CD Pipelines"
+description: "Use Task in popular CI environments (GitHub Actions, GitLab CI, etc.) for setup, build, and deploy workflows. Includes practical examples and best practices for smooth automation."
+---
+
+# Integrating Task into CI/CD Pipelines
+
+Automating your project’s build, test, and deployment in CI/CD pipelines is one of the most powerful ways to leverage Task. This guide walks you through embedding Task runs within popular continuous integration environments such as GitHub Actions, GitLab CI, and others, helping you craft efficient, maintainable workflows that reflect your local development automation.
+
+---
+
+## What This Guide Covers
+
+This guide teaches you how to:
+
+- Use Task as the automation engine inside common CI/CD systems.
+- Configure your pipeline YAML files to run Task with target tasks.
+- Handle environment variables, caching, and artifacts within CI.
+- Apply best practices to ensure reliable, smooth builds.
+
+---
+
+## Prerequisites
+
+Before you start:
+
+- Have a valid `Taskfile.yml` in your project root, configured with the tasks you want to run in CI.
+- Installed Task locally and tested relevant tasks for build, test, or deploy in your development environment.
+- Basic familiarity with your CI system's YAML configuration syntax.
+- Access to add or update pipeline configuration files in your repository.
+
+---
+
+## Expected Outcome
+
+By completing this guide, you will have:
+
+- Integrated Task commands seamlessly into your pipeline scripts.
+- Reduced duplication by reusing your Task automation definitions across local and CI environments.
+- Applied patterns for environment setup, caching, and artifact handling tailored for CI/CD.
+
+---
+
+## Typical Time Commitment
+
+Approximately 15-30 minutes depending on your familiarity with CI/CD YAML files and Task configurations.
+
+---
+
+## Difficulty Level
+
+Intermediate – assumes some experience with automated build pipelines and Task usage.
+
+---
+
+# Step-by-Step Integration Instructions
+
+### 1. Locating Your Taskfile
+
+Ensure your `Taskfile.yml` or variant (`Taskfile.yaml`) is at the root of your repository. CI runners will execute commands relative to this location by default.
+
+### 2. Installing Task in the CI Environment
+
+You must install Task during the CI run before executing any tasks. This avoids relying on pre-installed tooling and ensures consistent versions.
+
+**Example for GitHub Actions:**
+
+```yaml
+- name: Install Task CLI
+  run: |
+    curl -sSfL https://taskfile.dev/install.sh | sh
+    export PATH="$HOME/.task/bin:$PATH"
+```
+
+**Tip:** Consider using [GitHub’s official setup-task action](https://github.com/go-task/setup-task) for streamlined Task installation.
+
+### 3. Running Your Tasks
+
+Invoke your Task tasks using the `task` command followed by the desired task name, e.g., `task test` or `task build`.
+
+```yaml
+- name: Run the default Task
+  run: task
+
+- name: Run specific build task
+  run: task build
+```
+
+You can use any CLI flags supported by Task, such as `--verbose`, `--silent`, or `--force`, to control execution behavior.
+
+### 4. Passing Arguments to Tasks
+
+If you need to supply custom command-line arguments to Task tasks, use the `--` separator. These arguments become available within tasks through the `CLI_ARGS` variable.
+
+```yaml
+- name: Run a task with arguments
+  run: task run -- --flag1 value1
+```
+
+### 5. Caching in CI Pipelines
+
+To speed up builds, cache Task’s binaries and artifacts such as compiled outputs or downloaded dependencies.
+
+**Example: Caching Go module cache and Task binary on GitHub Actions:**
+
+```yaml
+- name: Cache Go modules
+  uses: actions/cache@v3
+  with:
+    path: |
+      ~/go/pkg/mod
+      ~/.cache/go-build
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+- name: Cache Task binary
+  uses: actions/cache@v3
+  with:
+    path: ~/.task/bin
+    key: task-binary-${{ runner.os }}-v3.45.4
+```
+
+You can adapt caching for your CI provider accordingly, focusing on the locations where Task or build artifacts are stored.
+
+### 6. Using Environment Variables
+
+Task respects environment variables defined in your CI environment. You can also define environment variables scoped to tasks within your Taskfile via `env:`.
+
+In CI pipeline YAML, declare environment variables to pass sensitive information or runtime configuration:
+
+```yaml
+env:
+  MY_SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+
+steps:
+  - name: Run test with env
+    run: task test
+```
+
+Ensure secrets and sensitive info are managed securely using your CI provider’s mechanisms.
+
+### 7. Combining Tasks for Complex Pipelines
+
+Use Task’s powerful dependency and calling mechanisms to chain multiple related tasks.
+
+For example, in your pipeline:
+
+```yaml
+- name: Build and test
+  run: task build test
+```
+
+This runs `build` and then `test` respecting any dependencies declared in your Taskfile.
+
+### 8. Handling Artifacts and Uploads
+
+Some CI systems support artifact upload/download steps for sharing build results.
+
+While Task manages the build and test steps, use your CI’s native artifact management to upload generated files, e.g., binaries or logs, after Task finishes.
+
+### 9. Sample CI Configurations
+
+#### GitHub Actions: Simple Build & Test Workflow
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Task CLI
+        run: |
+          curl -sSfL https://taskfile.dev/install.sh | sh
+          echo "$HOME/.task/bin" >> $GITHUB_PATH
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Run default Task
+        run: task
+```
+
+#### GitLab CI: Using Task for Build and Test
+
+```yaml
+stages:
+  - build
+  - test
+
+build-job:
+  stage: build
+  image: golang:1.20
+  script:
+    - curl -sSfL https://taskfile.dev/install.sh | sh
+    - export PATH="$HOME/.task/bin:$PATH"
+    - task build
+
+test-job:
+  stage: test
+  image: golang:1.20
+  script:
+    - curl -sSfL https://taskfile.dev/install.sh | sh
+    - export PATH="$HOME/.task/bin:$PATH"
+    - task test
+```
+
+<Info>
+These examples illustrate the typical flow: install Task, set up environment, cache dependencies (optional), then run tasks defined in your Taskfile.
+</Info>
+
+---
+
+## Best Practices for CI/CD with Task
+
+- **Keep your Taskfile as the single source of automation:** Avoid duplicating build and test commands in CI pipeline YAML and Taskfile.
+- **Use the `silent` and `verbose` flags strategically:** Control log verbosity for clarity in CI logs.
+- **Version-pin your Task installation:** Use fixed Task versions or official setup actions to ensure build reproducibility.
+- **Leverage environment variables:** Keep secrets and configs outside the Taskfile.
+- **Utilize dependencies and includes:** Organize complex pipelines into modular tasks and included Taskfiles.
+
+---
+
+## Troubleshooting Tips
+
+- **Task command not found in CI:** Ensure Task is installed and added to path before running tasks.
+- **Tasks fail due to missing environment variables:** Validate environment variable presence and secrets injection in pipeline settings.
+- **Cache corruption or outdated binaries:** Clear your CI cache or bump cache keys when upgrading Task or dependencies.
+- **Taskfile not found:** Confirm working directory in CI is root of repo or specify `--taskfile` flag.
+
+---
+
+## Additional Resources and Next Steps
+
+- [Task CLI Reference](https://taskfile.dev/reference/cli) – Full list of command-line flags and options.
+- [Getting Started with Taskfiles](https://taskfile.dev/getting-started) – Create and run your first Taskfile tasks.
+- [Managing Task Dependencies and Includes](https://taskfile.dev/guides/advanced-features-patterns/task-dependencies-includes) – For modular pipeline automation.
+- [Best Practices for Taskfiles](https://taskfile.dev/guides/getting-started-workflows/taskfile-structure-best-practices) – Writing maintainable Taskfiles.
+
+Integrate Task confidently in your CI workflows and enjoy faster, reliable automation.
