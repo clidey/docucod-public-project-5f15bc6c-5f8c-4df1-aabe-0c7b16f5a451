@@ -1,0 +1,252 @@
+---
+title: "Taskfile Not Found or Loaded Incorrectly"
+description: "Guidance for resolving errors where Task cannot detect or correctly parse the Taskfile, including directory placement, Taskfile variants, YAML issues, and configuration recommendations. Helps users quickly identify and fix file-related misconfigurations."
+---
+
+# Taskfile Not Found or Loaded Incorrectly
+
+This FAQ helps you quickly identify, understand, and resolve errors related to Task's inability to detect or correctly parse your Taskfile. These issues often arise due to incorrect file placement, naming variants, YAML syntax problems, or inappropriate configuration settings. By following the guidance below, you can get your Task automation back on track swiftly.
+
+---
+
+## 1. Common Taskfile Detection Errors
+
+### Why does Task say "No Taskfile found"?
+
+Task looks for a Taskfile in your current working directory or its parents, searching for expected filenames such as `Taskfile.yml` or `Taskfile.yaml`.
+
+- If no suitable Taskfile is found at the specified path or in parent directories, you’ll see an error like:
+
+  ```
+task: No Taskfile found at "./" (or any of the parent directories).
+  ```
+
+- This error may include a hint to initialize a new Taskfile:
+
+  ```
+task: No Taskfile found at "./" (or any of the parent directories). Run `task --init` to create a new Taskfile.
+  ```
+
+#### How to Fix:
+
+- **Verify Directory:** Make sure you run Task in the directory containing your Taskfile or a subdirectory thereof.
+- **Check Filename:** Confirm that your Taskfile is named correctly (usually `Taskfile.yml` or `Taskfile.yaml`). Task does not detect files with incorrect or unexpected names.
+- **Create a New Taskfile:** If you don’t have a Taskfile, run `task --init` to generate one.
+
+<Tip>
+Run `ls` or `dir` in your project root to verify the presence and exact name of the Taskfile.
+</Tip>
+
+
+### Taskfile is found but reports as invalid or can't be parsed
+
+If Task locates a Taskfile but fails to parse it due to syntax errors or incorrect formatting, you will see errors such as:
+
+```text
+ task: Failed to parse Taskfile.yml:
+<YAML parsing error details>
+```
+
+or more detailed error messages pointing to specific lines and columns in your Taskfile.
+
+#### How to Fix:
+
+- **Check YAML Syntax:** Verify your Taskfile YAML structure using YAML linters or online validators.
+- **Use Indentation Carefully:** YAML is very sensitive to indentation; ensure consistent spaces for nesting.
+- **Review Error Snippets:** Error messages often include a snippet highlighting problematic lines—use this to focus troubleshooting.
+- **Avoid Unsupported Features:** Ensure your Taskfile conforms to the expected schema version (see section below).
+
+<Note>
+Task reports parsing errors with line and column details to help you pinpoint the exact issue in your Taskfile.
+</Note>
+
+---
+
+## 2. Taskfile Variants and Placement Details
+
+### Which Taskfile filename variants are supported?
+
+Task recognizes these common variants:
+
+- `Taskfile.yml`
+- `Taskfile.yaml`
+
+Other filenames or extensions are not standard and will not be detected automatically.
+
+### Where should the Taskfile be located?
+
+- Place your Taskfile in the **root of your project directory** where you run Task.
+- Task will search upward through parent directories if it doesn’t find a Taskfile immediately, stopping at the filesystem root.
+
+<Tip>
+You can specify a custom Taskfile using the `-f` or `--taskfile` CLI flag if you want to use a different filename or location.
+</Tip>
+
+---
+
+## 3. Common YAML Issues in Taskfiles
+
+### Typical YAML pitfalls include:
+
+- Using tabs instead of spaces for indentation.
+- Misaligned or missing indentation levels.
+- Unescaped special characters or strings.
+- Incorrect list or map formatting.
+
+### Example Problem: Incorrect Indentation
+
+```yaml
+# BAD indentation
+tasks:
+  build:
+  cmds:
+  - echo "Build started"
+```
+
+### Corrected version:
+
+```yaml
+tasks:
+  build:
+    cmds:
+      - echo "Build started"
+```
+
+<Check>
+Always validate your Taskfile YAML before running Task to avoid syntax errors disrupting your automation.
+</Check>
+
+---
+
+## 4. Taskfile Schema Version and Compatibility
+
+Your Taskfile must declare a valid schema version to be accepted and correctly interpreted by Task.
+
+### Common Errors:
+
+- Missing `version` field:
+
+  ```
+  task: Missing schema version in Taskfile "Taskfile.yml"
+  ```
+
+- Unsupported or incorrectly formatted version:
+
+  ```
+  task: Invalid schema version in Taskfile "Taskfile.yml":
+  Schema version (X.Y.Z) is not supported
+  ```
+
+### Resolution Steps:
+
+- Ensure the `version` key exists at the top of your Taskfile and is correct, for example:
+
+  ```yaml
+  version: '3'
+  ```
+
+- Refer to the [Taskfile Schema Reference](https://taskfile.dev/#/schema) for supported version numbers and any migration notes.
+
+<Info>
+Newer Task versions enforce schema version checking to improve reliability and prevent subtle parsing errors.
+</Info>
+
+---
+
+## 5. Resolving Remote Taskfile Issues
+
+If you use includes or remote Taskfiles, you might encounter issues such as fetch failures, checksum mismatches, or trust prompts.
+
+### Errors you may see:
+
+- **Fetch failures:**
+  ```
+  task: Download of "https://example.com/Taskfile.yml" failed with status code 404 (Not Found)
+  ```
+
+- **Checksum mismatch:**
+  ```
+  task: The checksum of the Taskfile at "https://example.com/Taskfile.yml" does not match!
+  got: "abc123"
+  want: "def456"
+  ```
+
+- **Untrusted Taskfile prompt declined by user:**
+  ```
+  task: Taskfile "https://example.com/Taskfile.yml" not trusted by user
+  ```
+
+### How to Fix:
+
+- Check the remote URL for correctness and availability.
+- Verify whether your network allows connections to remote hosts.
+- If using checksums, confirm you have the correct checksum pinned.
+- Trust remote Taskfiles only from sources you know and accept when prompted.
+- Use the `--insecure` flag to allow downloads over insecure connections (not recommended).
+
+<Warning>
+Allowing insecure downloads (`--insecure`) increases security risks; prefer secure connections and trusted sources.
+</Warning>
+
+---
+
+## 6. Configuration Considerations Impacting Taskfile Loading
+
+### Offline Mode and Caching
+
+- Running Task with the `--offline` flag disables network fetches.
+- Cached copies of remote Taskfiles might be used but must be present and valid.
+- If the cache is missing or expired, and you're offline, Task will error out.
+
+### Directory Permissions and Access
+
+- Ensure Task has read permissions for the directory and files where the Taskfile resides.
+- File system permission issues can cause silent failures or errors.
+
+---
+
+## 7. Practical Tips & Best Practices
+
+- **Keep Taskfile filenames and locations standard:** Use `Taskfile.yml` in project roots.
+- **Validate YAML syntax regularly:** Integrate linters or YAML validation tools.
+- **Handle schema version updates carefully:** Review release notes and migrate your Taskfile accordingly.
+- **Use trusted remote Taskfiles and pin checksums:** To ensure security and consistency.
+- **Run Task commands with appropriate flags:** Use `task --init` to create missing Taskfiles.
+
+## 8. Troubleshooting Checklist
+
+<Steps>
+<Step title="Taskfile Not Found">
+- Check current directory and parent directories for a file named `Taskfile.yml` or `Taskfile.yaml`.
+- Run `task --init` to create a Taskfile if missing.
+</Step>
+<Step title="Parsing Errors">
+- Validate YAML syntax externally.
+- Review error line and column in Taskfile decode errors.
+</Step>
+<Step title="Schema Version Errors">
+- Confirm `version` key exists and matches supported versions.
+</Step>
+<Step title="Remote Taskfile Errors">
+- Verify URL access.
+- Check checksum pinning.
+- Use `--insecure` cautiously if needed.
+</Step>
+<Step title="Permission Issues">
+- Confirm read permissions for Taskfiles and directories.
+</Step>
+</Steps>
+
+---
+
+## 9. Additional Resources
+
+- [Taskfile Schema Reference](https://taskfile.dev/#/schema)
+- [Taskfile Includes and Modularization](https://taskfile.dev/#/concepts/includes)
+- [Troubleshooting Setup Issues](../../getting-started/first-usage-validation/troubleshooting-setup)
+- [Setting Up Your First Taskfile](../../getting-started/initial-setup/setup-taskfile)
+- [Common Command Line Errors FAQ](../../faq/core-usage-troubleshooting/common-command-errors)
+
+---
+
+By following this guide, you can efficiently diagnose and resolve the most common Taskfile detection and parsing errors to restore smooth automation workflows in Task.
