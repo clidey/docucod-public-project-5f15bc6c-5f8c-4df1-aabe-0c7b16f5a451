@@ -1,0 +1,287 @@
+---
+title: "Common Developer Workflows with Task"
+description: "Explore best-practice Taskfile recipes for common developer tasks—builds, tests, linting, formatting, and running applications. Learn how to express these workflows in Task, enabling repeatable, shareable automation for your team."
+---
+
+# Common Developer Workflows with Task
+
+Unlock the power of Task by adopting battle-tested Taskfile recipes that streamline common developer workflows. This guide reveals how to automate building, testing, linting, formatting, and running applications — turning repetitive tasks into simple, reusable commands. Whether you’re bootstrapping a new project or optimizing an existing pipeline, these patterns help your team collaborate on clear, maintainable automation.
+
+---
+
+## 1. Workflow Overview
+
+### What You Will Accomplish
+Explore practical Taskfile configurations that represent everyday developer workflows. You will learn how to define tasks to build your codebase, run tests, apply linters, format source files, and start applications — all with concise, declarative YAML.
+
+### Prerequisites
+- Have Task installed on your system.
+- A basic Taskfile set up in your project root (see [Your First Taskfile: Quickstart](/guides/getting-started-workflows/quickstart-taskfile)).
+- Familiarity with task syntax and command execution in Task.
+
+### Expected Outcome
+By the end, you will possess ready-to-use task definitions applicable to many projects, simplifying common commands into a shared automation layer.
+
+### Time Commitment
+About 15–20 minutes to read, understand, and apply examples.
+
+### Skill Level
+Beginner to intermediate Task users.
+
+---
+
+## 2. Common Task Patterns
+
+The following sections provide step-by-step, actionable approaches to implement core developer tasks.
+
+### 2.1 Building Your Project
+
+Automate the compilation or build process.
+
+```yaml
+version: '3'
+
+tasks:
+  build:
+    desc: "Compile the application"
+    cmds:
+      - echo "Building project..."
+      - go build -v -o ./bin/myapp ./cmd/myapp
+```
+
+**How to Use:**
+- Run `task build` to compile your application.
+- The output binary will be created at `./bin/myapp`.
+
+**Tips:**
+- Add `sources` and `generates` to enable task skipping when build inputs and outputs are unchanged (see [Fingerprinting](#3-tips-best-practices)).
+
+---
+
+### 2.2 Running Tests
+
+Define a task to run your unit or integration tests.
+
+```yaml
+  test:
+    desc: "Run all tests"
+    cmds:
+      - echo "Running tests..."
+      - go test -race ./...
+```
+
+**How to Use:**
+- Invoke `task test` to run tests.
+
+**Tips:**
+- Use `deps` to ensure setup tasks run before tests.
+
+---
+
+### 2.3 Linting Source Code
+
+Define tasks to enforce code quality.
+
+```yaml
+  lint:
+    desc: "Run linter to check code style"
+    cmds:
+      - echo "Linting source code..."
+      - golangci-lint run
+```
+
+**How to Use:**
+- Call `task lint` to run the linter.
+
+**Tips:**
+- Combine with `watch` for continuous linting during development.
+
+---
+
+### 2.4 Formatting Code
+
+Automatically format source files to maintain consistent style.
+
+```yaml
+  format:
+    desc: "Format source files"
+    cmds:
+      - echo "Formatting source files..."
+      - go fmt ./...
+```
+
+**How to Use:**
+- Run `task format` to format code.
+
+---
+
+### 2.5 Running the Application
+
+Define a task to start your app during development.
+
+```yaml
+  run:
+    desc: "Start the application"
+    cmds:
+      - echo "Starting application..."
+      - ./bin/myapp
+```
+
+**How to Use:**
+- Execute `task run` to launch your app.
+
+**Tips:**
+- Use `interactive: true` on interactive apps like REPLs or debuggers.
+
+---
+
+### 2.6 Combining Tasks with Dependencies
+
+You can chain workflows logically, to run prerequisite tasks automatically.
+
+```yaml
+  build-and-test:
+    desc: "Build then test the application"
+    deps: [build]
+    cmds:
+      - task: test
+```
+
+**How to Use:**
+- Run `task build-and-test` to build and then test.
+
+---
+
+### 2.7 Running Tasks in Parallel
+
+Execute multiple independent tasks concurrently.
+
+```yaml
+  ci:
+    desc: "Run lint, tests, and build in parallel"
+    cmds:
+      - echo "Starting CI tasks..."
+    deps:
+      - lint
+      - test
+      - build
+```
+
+Run with CLI flag for concurrency:
+
+```bash
+$ task ci --parallel
+```
+
+---
+
+## 3. Tips, Best Practices & Common Pitfalls
+
+- **Use `sources` and `generates` to enable Fingerprinting:** This lets Task intelligently skip tasks when inputs and outputs haven't changed, saving time.
+
+- **Leverage `prompt` for Destructive or Important Tasks:** Prevent accidental execution by prompting confirmation.
+
+- **Employ `silent` wisely:** To reduce noise in task output, apply `silent: true` at the task or command level.
+
+- **Avoid Circular Dependencies:** Check that your task dependencies do not form loops which cause infinite recursion.
+
+- **Set `run` Behavior for Repetitive Tasks:** Use `run: once` or `run: when_changed` to control task invocation frequency for efficiency.
+
+- **Use Variable Referencing and Passing:** Pass variables to sub-tasks and included Taskfiles to avoid duplication and customize behavior.
+
+- **Be Mindful of Platform Restrictions:** Use the `platforms` key to skip incompatible tasks gracefully.
+
+- **Configure `interactive: true` for apps requiring standard input interaction.**
+
+- **Watch Mode:** Use `watch: true` on tasks with `sources` defined to auto-restart on file changes.
+
+---
+
+## 4. Example Taskfile Template for Dev Workflow
+
+```yaml
+version: '3'
+
+vars:
+  BIN: ./bin/myapp
+
+tasks:
+  build:
+    desc: Build the project
+    sources:
+      - '**/*.go'
+    generates:
+      - '{{.BIN}}'
+    cmds:
+      - go build -o {{.BIN}} ./cmd/myapp
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  lint:
+    desc: Lint source files
+    cmds:
+      - golangci-lint run
+
+  format:
+    desc: Format source files
+    cmds:
+      - go fmt ./...
+
+  run:
+    desc: Run the built application
+    deps: [build]
+    cmds:
+      - {{.BIN}}
+    interactive: true
+
+  ci:
+    desc: Run lint, test, and build in parallel
+    deps: [lint, test, build]
+```
+
+---
+
+## 5. Troubleshooting
+
+### Task Does Not Run or Reports Up To Date When It Should Not
+- Verify `sources` and `generates` patterns correctly match your files.
+- Check if the `method` is set to `checksum` or `timestamp` and whether those metadata are properly updated.
+- Use `--force` to bypass up-to-date checks temporarily.
+
+### Commands Fail but No Output is Shown
+- Ensure `silent` is not enabled unintentionally.
+- Check task output mode (`output`) configuration or CLI flags that may suppress output.
+
+### Prompts Not Displaying or Blocking Execution
+- If running in CI or non-interactive shell, prompts will block indefinitely unless `--yes` flag is provided.
+
+### Included Tasks Not Found
+- Check `includes` paths are correct and files exist.
+- Ensure correct namespace usage for included tasks.
+
+### Variable Interpolation Fails
+- Validate variable names and that values are set at appropriate scope.
+- Use `task --list` to see tasks and variables in context.
+
+---
+
+## 6. Next Steps
+
+- Explore modular Taskfiles with [Includes and Dependency Management](/guides/advanced-features-patterns/task-dependencies-includes) to scale automation.
+- Learn about [Advanced Variable and Environment Handling](/guides/advanced-features-patterns/variables-envs) to parameterize workflows.
+- Integrate Task into your CI/CD pipelines with [Integrating Task into CI/CD Pipelines](/guides/integrations-patterns/ci-cd-integration) documentation.
+- Deepen your understanding with [Taskfile Structure and Best Practices](/guides/getting-started-workflows/taskfile-structure-best-practices).
+
+---
+
+## 7. Additional Resources
+
+- Official Task documentation homepage: [https://taskfile.dev](https://taskfile.dev)
+- Official Task GitHub repository: [https://github.com/go-task/task](https://github.com/go-task/task)
+
+
+
+
