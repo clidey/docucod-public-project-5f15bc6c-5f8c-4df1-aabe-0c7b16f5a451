@@ -1,0 +1,151 @@
+---
+title: "Installation Problems"
+description: "Addresses challenges with installing Task, including common environment setup errors, incompatible platforms, and permission issues. Step-by-step troubleshooting helps users get up and running, regardless of their operating system."
+---
+
+# Installation Problems FAQ
+
+This page addresses common challenges you may encounter while installing Task across different operating systems. Whether you're setting up your environment for the first time, facing compatibility issues, or struggling with permissions, this guide provides actionable steps and troubleshooting advice to help you get Task running smoothly.
+
+---
+
+## 1. General Installation Issues
+
+### Why does Task fail to run after installation?
+- Ensure that the Task binary is added to your system's `PATH` environment variable. Without this, your shell will not recognize the `task` command.
+- On macOS and Windows, some default install locations like `~/.local/bin` or `~/bin` might not be included in `PATH`. Manually add them if using the install script.
+
+### What platforms are supported by Task?
+- Task supports Linux, macOS, and Windows on popular CPU architectures such as amd64 and arm64.
+- Verify your platform against the [System Requirements](https://docs.taskfile.dev/getting-started/prerequisites-installation/system-requirements) to ensure compatibility.
+
+### How do I verify that Task was installed correctly?
+- Run `task --version` in your terminal or command prompt. Successful output confirms Task is accessible.
+- If the command is not found, check your installation steps.
+
+---
+
+## 2. Permission and Access Errors
+
+### Why do I get permission denied errors when installing Task?
+- For system-level installs, you may need administrator or root privileges.
+- Use `sudo` on Linux/macOS if installing into protected directories (e.g., `/usr/local/bin`).
+- On Windows, run your terminal or PowerShell as Administrator for installs like Scoop or Chocolatey.
+
+### How to fix permission issues with package managers?
+- For Homebrew, make sure your user has write access to `/usr/local` or the appropriate Cellar directories.
+- For Snap, the classic confinement must be enabled: `sudo snap install task --classic`.
+
+---
+
+## 3. Platform-Specific Installation Challenges
+
+### Linux
+- Ensure you have added the official Task repository correctly before installation using package managers like `dnf` or `apt`.
+- If installing manually, verify binary compatibility with your distro and architecture.
+
+### macOS
+- When using Homebrew, choose the official tap to get the latest version and avoid outdated community forks.
+- Add the binary directory to your `PATH` if installed in `~/.local/bin` or `~/bin`.
+
+### Windows
+- Use package managers like WinGet, Scoop, or Chocolatey for seamless installation.
+- Confirm your shell environment recognizes installed bash-style commands if using npm or pip installations.
+- Running PowerShell as Administrator often resolves permission or path recognition problems.
+
+---
+
+## 4. Installation Methods and Troubleshooting
+
+### Using Official Package Managers
+- Follow the setup instructions exactly for each package manager (dnf, apt, Homebrew, Snap, npm, WinGet).
+- Repositories often require manual setup scripts before actual package installation.
+
+### Binary Download
+- Download the appropriate precompiled binary from [Task GitHub Releases](https://github.com/go-task/task/releases).
+- Verify checksum with `task_checksums.txt` to avoid corrupted files.
+- Place the binary in a directory included in your system's `PATH`.
+
+### Install Script
+- The script installs Task by downloading the latest binary automatically.
+- You can specify installation directory and version tag.
+- On macOS and Windows, remember to update your `PATH` if using default install locations like `~/.local/bin`.
+
+### Building from Source
+- Ensure you have a supported version of [Go](https://golang.org) installed.
+- Use `go install github.com/go-task/task/v3/cmd/task@latest` to build and install.
+- This method requires more setup but gives you complete control over the binary.
+
+---
+
+## 5. Common Pitfalls & Solutions
+
+- **PATH Not Updated:** After install, open a new shell or restart your terminal to refresh environment variables.
+- **Outdated Versions:** Community package managers may lag behind official releases—prefer official repos or binaries.
+- **Permission Denied:** Use elevated privileges or install in user-writable directories.
+- **Incomplete Install Scripts:** Check network connectivity and script execution permissions.
+
+---
+
+## 6. Practical Tips for Smooth Installation
+
+- Always check the [official installation page](https://taskfile.dev/installation) for up-to-date instructions.
+- Use the install script for CI environments to ensure repeatability.
+- Validate installation immediately with `task --version` and by running a simple task.
+- Configure shell completions post-install to improve your command-line experience.
+
+---
+
+## 7. Troubleshooting Checklist
+
+<Steps>
+<Step title="Verify Platform Compatibility">
+Confirm your OS and architecture are supported by Task according to the system requirements.
+</Step>
+<Step title="Choose Installation Method">
+Select the official package manager or binary method best suited to your platform and preferences.
+</Step>
+<Step title="Check PATH Environment Variable">
+Ensure the installation directory is included in your `PATH`. Restart the terminal after changes.
+</Step>
+<Step title="Run Basic Version Command">
+Execute `task --version` to confirm Task is correctly installed and visible.
+</Step>
+<Step title="Review Permissions">
+If encountering permission errors, try running installation commands with elevated privileges or switch to user-local installs.
+</Step>
+<Step title="Review Logs and Errors">
+Check installation output for errors or warnings. Seek help with exact messages if unclear.
+</Step>
+</Steps>
+
+---
+
+## 8. Getting Help
+
+- Consult the [official Task installation documentation](https://taskfile.dev/installation).
+- Reach out on community forums or GitHub issues if problems persist.
+- Use the FAQ sections related to setup and environment issues for additional guidance.
+
+---
+
+## Related Documentation
+
+- [System Requirements](https://docs.taskfile.dev/getting-started/prerequisites-installation/system-requirements)
+- [Installing Task](https://docs.taskfile.dev/getting-started/prerequisites-installation/installing-task)
+- [Quick Installation Validation](https://docs.taskfile.dev/getting-started/first-usage-validation/quick-validation)
+- [Task CLI Reference](https://docs.taskfile.dev/reference/cli)
+
+---
+
+<Tip>
+When installing Task on Windows, prefer package managers like WinGet, Scoop, or Chocolatey for smoother experience and automatic PATH updates.
+</Tip>
+
+<Warning>
+Avoid mixing different installation methods (e.g., npm and binary) on the same machine to prevent version conflicts.
+</Warning>
+
+<Note>
+If you encounter persistent issues, check for antivirus or security software that might block installation or execution of Task binaries.
+</Note>
