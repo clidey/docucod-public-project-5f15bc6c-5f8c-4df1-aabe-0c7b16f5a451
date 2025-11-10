@@ -1,0 +1,184 @@
+---
+title: "Quick Installation Validation"
+description: "Use a simple checklist to confirm your installation is complete and Task is working as expected. Guide users through quick diagnostics to verify environment, configuration, and core commands in seconds."
+---
+
+# Quick Installation Validation
+
+Ensure your Task installation is correctly set up and ready to automate by running a simple, focused validation checklist. This guide walks you through quick diagnostics that verify your environment, configuration, and core Task commands work as expected in seconds.
+
+---
+
+## 1. Validate Your Environment
+
+Before running Task tasks, confirm your environment meets essential requirements.
+
+### Step 1: Confirm System Compatibility
+- Verify your OS is supported (Linux, macOS, Windows) and meets minimum specs.
+- Check installed dependencies suit Task’s needs.
+
+For detailed system requirements, see [System Requirements](/getting-started/prerequisites-installation/system-requirements).
+
+### Step 2: Verify Task Installation
+Open your terminal or command prompt and run:
+
+```bash
+task --version
+```
+
+- Expected output: The current Task version number.
+- If this command fails or returns no version, your installation did not succeed.
+
+<Tip>
+If you see a 'command not found' error, check your PATH environment variable and reinstall Task following the official [Installation Guide](/getting-started/prerequisites-installation/installing-task).
+</Tip>
+
+---
+
+## 2. Confirm Configuration Basics
+
+Validate your initial Taskfile setup and core configuration so Task can find and run tasks.
+
+### Step 3: Check Taskfile Presence
+Make sure a `Taskfile.yml` or equivalent exists in your project root.
+
+- Run:
+
+```bash
+ls Taskfile.*
+```
+- Expected: `Taskfile.yml` should be listed.
+
+If missing, create a basic Taskfile as described in [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile).
+
+### Step 4: Validate Taskfile Syntax
+Execute a syntax check by running:
+
+```bash
+task --list
+```
+
+- Expected output: List of tasks defined in your Taskfile.
+- Errors here indicate syntax or formatting problems.
+
+<Tip>
+Use this command regularly to verify your Taskfile remains valid after edits.
+</Tip>
+
+---
+
+## 3. Run Core Commands to Validate Functionality
+
+Perform quick tests to verify Task executes commands correctly and that up-to-date checks function.
+
+### Step 5: Run a Basic Task
+Try running the default task (if any) or a known simple task:
+
+```bash
+task
+```
+or
+```bash
+task <your_task_name>
+```
+
+- Verify the expected output appears without errors.
+
+### Step 6: Test Up-to-Date Checks
+Ensure Task correctly detects whether tasks are up to date when using `status` and `sources` checks.
+
+- Create a sample Taskfile with tasks leveraging `status` and `sources` fields (see examples below).
+- Run the task twice:
+  - The first execution should run normally.
+  - The second immediately after should report the task as up to date, skipping redundant work.
+
+Here is a practical example Taskfile snippet:
+
+```yaml
+version: '3'
+tasks:
+  build-checksum:
+    sources:
+      - ./source.txt
+    status:
+      - echo "{{.CHECKSUM}}"
+
+  build-ts:
+    method: timestamp
+    sources:
+      - ./source.txt
+    status:
+      - echo '{{.TIMESTAMP.Unix}}'
+      - echo '{{.TIMESTAMP}}'
+```
+
+- Run with:
+
+```bash
+task build-checksum
+```
+
+and
+
+```bash
+task build-ts
+```
+
+Watch for proper checksum or timestamp output indicating the state of source files.
+
+<Tip>
+If these commands always re-run or never reflect changes in file timestamps or contents, review your Taskfile’s `method`, `sources`, and `status` settings.
+</Tip>
+
+---
+
+## 4. Troubleshooting Common Issues
+
+### Issue: Task Command Not Found
+- Verify Task is installed and accessible from the terminal.
+- Check PATH environment variable.
+
+### Issue: Taskfile Not Detected
+- Confirm you run commands from the project directory containing the Taskfile.
+- Check for correct filename: `Taskfile.yml` is mandatory (case-sensitive).
+
+### Issue: Up-to-Date Check Fails to Detect Changes
+- Ensure your `sources` patterns correctly reference actual files.
+- Confirm `method` matches your desired strategy: `timestamp`, `checksum`, or `none`.
+- For advanced debugging, increase verbosity with `-v`.
+
+---
+
+## 5. Success Indicators
+
+After completing these steps, your Task installation should:
+
+- Show version details on `task --version`.
+- List tasks correctly with `task --list`.
+- Run basic tasks without errors.
+- Reflect accurate up-to-date statuses on subsequent runs.
+
+This confirms that your environment and configuration support reliable automation.
+
+---
+
+## 6. Next Steps
+
+- Proceed to [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile) to define meaningful automation for your project.
+- Explore [Running Your First Task](/getting-started/first-usage-validation/first-run) for detailed execution walkthroughs.
+- Consult [Troubleshooting Setup Issues](/getting-started/first-usage-validation/troubleshooting-setup) if you encounter errors.
+
+---
+
+## Appendix: Explanation of Up-to-Date Checks
+
+Task uses a combination of `status` and `sources` checks to determine if tasks need to run:
+
+- **Sources check** inspects your source files using timestamps or checksums.
+- **Status check** runs shell commands that verify external conditions.
+
+A task is skipped only if *both* checks deem it up to date (when both are defined). Otherwise, it runs.
+
+This system ensures your automation runs precisely when necessary, keeping builds efficient.
+
+---

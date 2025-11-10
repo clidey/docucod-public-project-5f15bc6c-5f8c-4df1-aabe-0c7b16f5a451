@@ -1,0 +1,279 @@
+---
+title: "Output Management and Logging"
+description: "See how Task manages command output, offering prefixed, grouped, and interleaved formats for clarity. Learn how Task's logging strategies support debugging, CI integration, and clear feedback during automation."
+---
+
+# Output Management and Logging
+
+Task provides flexible and clear mechanisms to manage command output during task execution, balancing user feedback, debugging clarity, and integration suitability. This guide unpacks how Task formats task output with distinct styles—prefixed, grouped, and interleaved—to help you gain precise control over your task logs and interpret results effectively.
+
+---
+
+## Understanding Task's Output Styles
+
+When Task runs commands, it captures and displays their output. How this output appears can significantly affect your productivity during development or automation. Task offers three main output handling styles to cater to different use cases:
+
+- **Interleaved** (default)
+- **Group**
+- **Prefixed**
+
+Each style serves unique workflows, from simple direct output streaming to structured, color-coded logging.
+
+### 1. Interleaved Output
+
+**What it Does:**
+
+- Outputs from stdout and stderr are mixed directly into the console as they occur.
+- Provides immediate, unbuffered feedback.
+
+**When to Use:**
+
+- Quick debugging or development iterations.
+- Environments where output grouping or prefixing is unnecessary.
+
+**How It Works:**
+
+Interleaved output connects standard output and error streams directly to the console writers without transformation. This simplicity ensures no delays or buffering.
+
+**Example:**
+
+```shell
+foo
+bar
+baz
+```
+
+_each line appears as it is produced by the commands._
+
+### 2. Grouped Output
+
+**What it Does:**
+
+- Buffers all output related to a task and prints it as one cohesive block after the task completes.
+- Optionally adds configurable group delimiters before and after the output.
+- Supports an _error_only_ mode to suppress output if the task succeeds.
+
+**When to Use:**
+
+- When you want to reduce log noise by consolidating task output.
+- In CI pipelines that support group folding (e.g., GitHub Actions) for easier log navigation.
+- To only show output on failure, minimizing distraction.
+
+**Key Features:**
+
+- You can customize group start and end strings with templated variables that dynamically expand at runtime.
+- Output is invisible until the task finishes successfully (or always shown if an error occurs).
+
+**Example Taskfile YAML using Group Output:**
+
+```yaml
+tasks:
+  build:
+    output:
+      group:
+        begin: '::group::Build Output'
+        end: '::endgroup::'
+        error_only: false
+    cmds:
+      - go build ./...
+```
+
+**Resulting Output When Run:**
+
+```plaintext
+::group::Build Output
+[All build output here]
+::endgroup::
+```
+
+*If `error_only` is set to `true` and the build succeeds, no output appears.*
+
+### 3. Prefixed Output
+
+**What it Does:**
+
+- Prefixes every output line with a label (e.g., task or stage name), enclosed in square brackets.
+- Applies distinct colors to prefixes for visual clarity.
+- Enables simultaneous execution or logs from multiple tasks to be easily distinguished.
+
+**When to Use:**
+
+- Running multiple concurrent or dependent tasks where output from different tasks interleaves on the console.
+- Tracing which exact task produced which line of output.
+- Debugging complex automation orchestrations.
+
+**How It Works:**
+
+- Task dynamically tracks prefixes and assigns consistent colors from a predefined palette.
+- Each line of stdout or stderr is buffered and printed with the prefix followed by the output line.
+
+**Example Console Output:**
+
+```plaintext
+[prefix] Compiling sources...
+[prefix] Tests passed
+[prefix] Deployment started
+```
+
+**Example Taskfile Snippet Using Prefixed Output:**
+
+```yaml
+tasks:
+  test:
+    output: prefixed
+    cmds:
+      - go test -v ./...
+```
+
+---
+
+## How to Configure Output Style
+
+Set the `output` key in your Taskfile's task definition to change how output is handled.
+
+```yaml
+tasks:
+  example:
+    output: group
+    # or 
+    output: prefixed
+    # or 
+    output: interleaved
+    cmds:
+      - echo "Hello, world"
+```
+
+For more granular group control:
+
+```yaml
+output:
+  group:
+    begin: "::group::Starting example"
+    end: "::endgroup::"
+    error_only: true
+```
+
+### Important Notes:
+
+- The **interleaved** style is the default if no `output` field is specified.
+- The **group** style ignores prefixing parameters.
+- Attempting to set grouping options (like `begin` or `end`) on a non-group style triggers a configuration error.
+
+---
+
+## Why Output Management Matters
+
+Clear output formatting is vital for:
+
+- **Debugging:** Identifying where errors occur across multiple tasks.
+- **CI Integration:** Allowing log folding and conditionally hiding noise.
+- **User Experience:** Providing immediate, contextual, and readable feedback.
+
+Consider the following scenarios:
+
+- Running a build with dependent tasks in parallel benefits greatly from prefixed output so logs don’t mix confusingly.
+- A deployment script in CI with group output can collapse output sections, making logs concise and navigable.
+- Simple development scripts can use interleaved output for responsive feedback.
+
+---
+
+## Best Practices for Using Output Styles
+
+- **Start Simple:** Use interleaved output during development to see real-time feedback without complexity.
+- **Leverage Groups in CI:** Use group output with begin/end hints customized for your CI environment to benefit from log folding.
+- **Use Prefixed for Parallel Tasks:** When executing multiple tasks concurrently, prefixing brings clarity and traceability.
+- **Use `error_only` with Caution:** Enable `error_only` judiciously so critical output does not get hidden on success.
+
+---
+
+## Troubleshooting Output Issues
+
+- **No Output Shown in Group Mode:** Ensure buffer flush occurs by task completion; confirm `error_only` isn’t hiding output due to a successful run.
+- **Output Prefixes Missing or All Same Color:** Verify that your terminal supports ANSI colors and that `TASK_COLOR` environment or CLI options do not disable colors.
+- **Group Begin/End Strings Not Working:** Ensure output style is set to `group` and the syntax matches templating references.
+- **Output Styles Not Applying:** Double-check Taskfile YAML indentation and syntax; misconfigurations may fall back silently to defaults.
+
+<Check>
+Use the `--verbose` flag when running Task to get diagnostic information about output handling.
+</Check>
+
+---
+
+## Behind the Scenes: How Task Implements Output Formats
+
+Task’s internal architecture for output management involves:
+
+- Wrapping writers for stdout and stderr depending on chosen style.
+- For **prefixed** output, it buffers partial lines to avoid prefixing mid-line fragments and synchronizes output with mutex locks.
+- For **group** output, Task buffers the entire output and only flushes at task completion, optionally gating output visibility based on error presence.
+
+This architecture is designed for concurrency-safe and color-aware logging.
+
+---
+
+## Summary
+
+Effective output management in Task empowers you to fine-tune your automation experience:
+
+- **Interleaved:** Fast, direct, minimal processing.
+- **Group:** Structured, buffered, ideal for CI log folding.
+- **Prefixed:** Clear, colored, line-tagged for parallel and complex workflows.
+
+Apply these modes selectively based on workflow complexity, environment, and debugging needs to maximize productivity and clarity.
+
+---
+
+## Related Documentation and Further Learning
+
+- [Task Execution Lifecycle](./executor-flow) — Understand how output fits in the overall task invocation.
+- [Variables, Templating, and Inheritance](./variables-templating) — Learn how to customize begin/end group strings using templates.
+- [Integrating Task into CI/CD Pipelines](../../guides/integrations-patterns/ci-cd-integration) — Best practices for grouping output in CI.
+- [Common Developer Workflows with Task](../../guides/getting-started-workflows/typical-workflows) — Examples of output styles in practice.
+- [Templating Reference](../../reference/templating) — For crafting dynamic output group markers.
+
+---
+
+## Example: Taskfile Snippet Demonstrating All Output Styles
+
+```yaml
+version: '3'
+tasks:
+  greet:
+    output: interleaved
+    cmds:
+      - echo "Hello Interleaved"
+
+  build:
+    output:
+      group:
+        begin: '::group::Building Project'
+        end: '::endgroup::'
+    cmds:
+      - echo "Compiling..."
+      - sleep 1
+      - echo "Build complete"
+
+  test:
+    output: prefixed
+    cmds:
+      - echo "Running tests..."
+      - sleep 1
+      - echo "Tests passed"
+```
+
+Run tasks individually or combined to see output behavior:
+
+```bash
+# Interleaved output for greet
+task greet
+
+# Grouped output for build
+task build
+
+# Prefixed output for test
+task test
+```
+
+---
+
+This approach to output management ensures that Task's logging is configurable, functional, and suited for environments ranging from local development shells to automated CI environments.

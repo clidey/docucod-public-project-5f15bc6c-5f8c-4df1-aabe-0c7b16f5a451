@@ -1,0 +1,156 @@
+---
+title: "Breaking Changes & Migration Notes"
+description: "In-depth documentation of any breaking changes in Task, including removed or significantly altered behaviors. Includes migration steps and practical advice to adapt existing Taskfiles or automation pipelines."
+---
+
+# Breaking Changes & Migration Notes
+
+This page provides comprehensive guidance on breaking changes introduced in Task's recent releases, focusing on removed or significantly altered behaviors that impact your Taskfiles and automation flows. It offers practical migration steps and best practices to help users adapt existing configurations with minimal friction.
+
+---
+
+## Understanding Breaking Changes in Task
+
+Breaking changes are modifications in Task that alter or remove existing functionality, potentially causing previously working Taskfiles to fail or behave differently. These changes are carefully introduced to improve Task’s capability, performance, or maintainability while ensuring users have a clear path to migrate.
+
+### Why Breaking Changes Occur
+
+- To remove deprecated syntax or features that no longer align with Task's goals.
+- To introduce new behaviors that fix bugs or enhance usability.
+- To streamline the codebase for future improvements.
+
+Task avoids abrupt major-version breaks by releasing breaking changes gradually as "experimental features" behind feature flags where possible, enabling users to opt-in before full adoption.
+
+---
+
+## Notable Breaking Changes and Their Impact
+
+### Removal of Version 2 Taskfile Schema
+
+- Support for Taskfile schema version 2 was deprecated and removed as of Task v3.34.0.
+- Any Taskfiles still using `version: '2'` will no longer be parsed.
+- Corresponding `Taskvars.yml` files for v2 are also no longer supported.
+
+#### Migration Steps
+
+1. Update your Taskfile with the new version 3 schema syntax. Key changes include:
+   - Declarative syntax changes
+   - Removal of syntax that had no effect in v3
+2. Refer to the [Task v3 Release Notes](https://github.com/go-task/task/releases/tag/v3.0.0) for a detailed list of changes.
+3. Validate Taskfile with the latest schema to avoid parse errors.
+
+> **Tip:** Use the latest Task CLI to detect and highlight deprecated schema usage early.
+
+### Changes to `run:` Behavior and Task Execution
+
+- The `run:` attribute (e.g., `once`, `always`, `when_changed`) refines when tasks run relative to their dependencies and prior execution.
+- Behavior adjustments have been introduced in some recent versions to align with intuitive execution expectations and fix edge cases.
+
+#### Migration Advice
+
+- Review any Taskfiles using `run: once` and understand how dependencies with `run:` may impact execution.
+- Test thoroughly to ensure expected task triggers occur.
+
+---
+
+## Migration Workflow for Updating Your Taskfiles
+
+Follow this step-by-step process to adapt your existing Taskfiles to comply with breaking changes:
+
+<Steps>
+<Step title="Backup Your Current Taskfiles">
+Always backup existing Taskfiles and automations before applying migrations to prevent data loss.
+</Step>
+<Step title="Identify Deprecated Features">
+Run Task with verbose flags or schema validation tools to detect deprecated usages.
+</Step>
+<Step title="Update Schema Version">
+For Taskfile schema v2 users, update your Taskfiles to schema v3 following official migration guidance.
+</Step>
+<Step title="Refactor Task Properties">
+Adjust task properties such as `run:`, `includes`, and `aliases` to match new expectations and capabilities.
+</Step>
+<Step title="Test Task Runs Locally">
+Execute your tasks in a development environment to confirm proper behavior after migration.
+</Step>
+<Step title="Enable Related Experiments Temporarily (If Needed)">
+If your automation relies on features that are under experimental flags for now, enable those experiments in `.taskrc.yml` or via environment variables to test compatibility.
+</Step>
+</Steps>
+
+---
+
+## Common Pitfalls and How to Avoid Them
+
+- **Taskfile Version Mismatch**: Ensure your Taskfile top-level `version:` string matches supported versions (currently `version: '3'`).
+- **Include Paths and Checksums**: When including Taskfiles, verify how relative paths and checksums are handled with the new loading logic.
+- **Internal Tasks Hidden from Suggestions**: Internal tasks are no longer suggested by default; explicitly call them if needed.
+
+
+---
+
+## Practical Migration Example
+
+Before (Version 2 schema):
+```yaml
+version: '2'
+tasks:
+  build:
+    cmds:
+      - echo Building...
+```
+
+After (Version 3 schema):
+```yaml
+version: '3'
+tasks:
+  build:
+    cmds:
+      - echo Building...
+```
+
+Tips:
+- Validate your updated Taskfile with `task --list` to confirm successful parsing.
+- Use the latest Task release to benefit from bug fixes and feature improvements.
+
+---
+
+## How to Stay Informed About Breaking Changes
+
+- Monitor the official [Changelog](https://taskfile.dev/changelog) page regularly.
+- Subscribe to release notes via GitHub releases [repository releases](https://github.com/go-task/task/releases).
+- Follow migration guides and deprecation notices linked in changelogs.
+
+---
+
+## Resources
+
+- [Taskfile Version 2 Schema Deprecation Notice](../../deprecations/version-2-schema.md)
+- [Official Task Changelog](../../changelog.md)
+- [Guide: Managing Task Dependencies and Includes](../../concepts/core-concepts/dependencies-and-includes.mdx)
+- [Guide: Designing Clean and Maintainable Taskfiles](../../guides/getting-started-workflows/taskfile-structure-best-practices.mdx)
+
+---
+
+## Summary
+
+Adapting to breaking changes in Task is essential to maintaining a stable and efficient automation workflow. This document helps you identify key breaking changes, understand their impact on Taskfiles, and follow clear migration steps to update your automation with confidence. Leveraging official resources and testing your Taskfiles thoroughly ensures a smooth transition.
+
+<Tip>
+If you encounter issues during migration, consider running Task with the `--verbose` flag for detailed debug information and consult community support channels such as GitHub Discussions or Discord.
+</Tip>
+
+---
+
+
+## Appendix: Sample `.taskrc.yml` Feature Flag to Enable Experimental Behavior
+
+```yaml
+experiments:
+  remote-taskfiles: true
+  gentle-force: true
+```
+
+This enables experimental features at runtime to test and adapt for upcoming major releases.
+
+---

@@ -1,0 +1,150 @@
+---
+title: "System Requirements"
+description: "Learn about the supported operating systems, necessary prerequisites, and recommendations for optimal use of Task. This page helps you confirm that your environment meets all requirements so you can proceed without compatibility issues."
+---
+
+# System Requirements
+
+Ensuring your system meets Task's requirements is essential for smooth installation, reliable operation, and full feature support. This guide covers supported platforms, minimum specifications, and configuration recommendations so you can confidently prepare your environment before using Task.
+
+---
+
+## 1. Supported Operating Systems
+
+Task is designed as a cross-platform automation tool and supports the following operating systems with full core functionality:
+
+- **Linux** (modern distributions)
+- **macOS**
+- **Windows**
+
+### Platform Specifics
+- On Windows, PowerShell or CMD shells are supported but usage of Windows Subsystem for Linux (WSL) may provide a more UNIX-like experience.
+- Task respects the native OS environment and shell conventions for each platform.
+
+---
+
+## 2. Minimum System Specifications
+
+Task itself is lightweight and requires minimal resources, but performance may vary based on the complexity of your Taskfiles and commands.
+
+| Component        | Minimum Requirement                    | Recommended                                |
+|------------------|--------------------------------------|--------------------------------------------|
+| Operating System | Linux kernel 3.x+, macOS 10.12+, Windows 10 | Latest stable releases of supported OSes  |
+| CPU              | 1 GHz or better                      | Multi-core, 2+ GHz or faster               |
+| Memory           | 512 MB RAM                           | 2 GB RAM or more                           |
+| Disk Space       | 50 MB for Task and dependencies      | 100 MB+ including project and caching     |
+
+> Task stores fingerprints, cache, and temporary data in a `.task` directory by default. Consider ignoring this directory in your version control system.
+
+---
+
+## 3. Software Prerequisites
+
+Before installing Task, ensure your system has the following:
+
+- **Go Runtime (Optional only if building from source):** Go 1.16 or later.
+- **Shell:** POSIX compatible shell (e.g., bash, zsh); Task supports bash shell options but can work with other shells that meet minimal POSIX compliance.
+- **YAML parser:** Included internally in Task, no separate installation required.
+
+> Task commands invoke your system shell for command execution. Verify your shell supports the syntax your tasks use.
+
+---
+
+## 4. Network and File System Considerations
+
+- **Network Access:** Required if you plan on including remote Taskfiles or downloading Taskfiles on the fly.
+- **File Permissions:** Task needs read/write access to the current working directory and any directories specified in tasks.
+
+---
+
+## 5. Recommended Configuration for Optimal Use
+
+- **Gitignore Configuration:** Add `.task/` to your `.gitignore` to avoid committing cache data.
+- **Environment Variables:** Set `TASK_TEMP_DIR` if you want to customize the cache location.
+
+Example:
+
+```shell
+export TASK_TEMP_DIR="$HOME/.task"
+```
+
+- **Shell Options:** To leverage Task’s advanced shell features (`set`, `shopt`), ensure your shell supports them (bash 4+ is ideal).
+
+- **Platform-Specific Tasks:** When defining tasks, use the `platforms` key to restrict execution to supported OS/arch combinations (see [Platform Specific Tasks](https://go-task.github.io/overview/core-concepts/tasks-and-taskfiles#platform-specific-tasks)).
+
+---
+
+## 6. Verifying Your System
+
+Run the following commands to verify your environment:
+
+```shell
+# Check OS and version
+uname -a
+
+# Check installed shells
+bash --version
+
+# Verify Go (if building from source)
+go version
+
+# Check disk space
+df -h .
+
+# Check memory
+free -h  # or systeminfo on Windows
+```
+
+If your environment satisfies these checks, you are ready for installation.
+
+---
+
+## 7. Troubleshooting Common System Issues
+
+If you encounter errors related to unsupported OS versions, missing shells, permission issues, or network failures while running Task or installing it, please consider the following:
+
+- Upgrade your OS to the latest stable version supporting your hardware.
+- Verify shell availability and compatibility.
+- Check Task’s error messages regarding file access or network connectivity.
+- For permission errors, adjust your directory permissions or run with appropriate user rights.
+
+Refer to [Troubleshooting Setup Issues](/getting-started/first-usage-validation/troubleshooting-setup) for detailed help.
+
+---
+
+## 8. Next Steps
+
+After confirming your system meeting these requirements:
+
+- Follow the [Installing Task](/getting-started/prerequisites-installation/installing-task) guide to download and install Task on your platform.
+- Proceed to [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile) to configure your first automation tasks.
+
+---
+
+## Additional Resources
+
+- [Supported Platforms and Shells](https://go-task.github.io/overview/core-concepts/tasks-and-taskfiles#platform-specific-tasks)
+- [Task CLI Reference](https://go-task.github.io/reference/cli)
+- [Taskfile YAML Schema](https://go-task.github.io/concepts/core-architecture/data-representations)
+
+---
+
+# Summary
+
+This page helps you ensure your environment meets minimum and recommended system requirements for Task. It provides platform compatibility, prerequisite software, configuration recommendations, verification commands, and troubleshooting tips to prepare you for successful Task usage.
+
+---
+
+<Taskfile>output</Taskfile>
+
+See the next guide for detailed installation instructions to proceed.
+
+---
+
+<Check>
+You have verified your operating system, shell environment, minimum specifications, and prerequisites.
+</Check>
+
+<Note>
+Proper environment configuration ensures reliable Task operation and usage of advanced features.
+</Note>

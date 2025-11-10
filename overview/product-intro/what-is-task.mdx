@@ -1,0 +1,108 @@
+---
+title: "What is Task?"
+description: "Task is a modern task runner and build automation tool focused on simplicity and developer productivity. It aims to streamline the execution of repetitive commands, builds, and workflows in software projects, offering an easier alternative to traditional tools like GNU Make. Learn how Task reduces friction in build automation and empowers teams to codify and share development scripts seamlessly."
+---
+
+# What is Task?
+
+Task is a modern task runner and build automation tool designed to simplify and accelerate repetitive command execution, builds, and workflows in software projects. It delivers a streamlined alternative to traditional tools like GNU Make by focusing on simplicity, clear task definitions, and developer productivity. With Task, teams can easily codify, manage, and share development scripts in a concise YAML format called a Taskfile.
+
+---
+
+## Introducing Task: Simplifying Build Automation
+
+At its core, Task tackles one of the most common pain points in development — manually running recurring build commands and scripts. Whether you’re compiling code, running tests, deploying applications, or orchestrating multi-step workflows, Task empowers you to automate these actions effortlessly.
+
+Unlike older automation tools which can be complex to configure and maintain, Task offers an intuitive syntax and valuable features designed to reduce friction. It allows you to express build logic clearly and modularly, manage dependencies, enforce conditions, and handle environment variables with ease.
+
+---
+
+## What is Task?
+
+Task is a CLI-based tool that reads a declarative configuration file known as a Taskfile, where you define tasks as named sets of commands with optional dependencies, variables, and conditions. It then executes these tasks in a reliable, efficient manner.
+
+Its primary purpose is to help developers:
+
+- Automate repetitive commands without crafting complex shell scripts
+- Reduce cognitive overhead controlling build order and orchestrations
+- Codify workflows to enable easy sharing and reuse across teams
+- Improve consistency by centralizing build and deployment logic
+
+The Taskfile’s YAML format emphasizes readability and simplicity, letting you quickly define tasks with:
+
+- Commands (`cmds`) to run for each task
+- Dependencies (`deps`) that run prior to the task
+- Environment variables and dynamic variables
+- Scoped execution directories
+- Conditional execution and platform-specific targeting
+
+Its modern design makes Task a compelling choice for both small projects and complex monorepos.
+
+---
+
+## Key Features & Capabilities
+
+### Expressive Task Definitions
+Define tasks with multiple commands, dependencies, and labels, all within an easy YAML format. Tasks can include descriptions and summaries, serving as living documentation for your build process.
+
+### Dependency Management
+Specify task dependencies that execute automatically before a given task runs. Dependencies run in parallel by default to optimize build times, but sequential execution can be controlled when needed.
+
+### Environment and Variable Handling
+Manage variables locally per task or globally. Support for dynamic variables, environment files (`dotenv`), and templated variables allows flexible and context-aware task execution.
+
+### Platform-Specific Tasks
+Control which tasks and commands run on certain operating systems or CPU architectures, allowing cross-platform projects to maintain clean build logic.
+
+### Conditional and Prompted Execution
+Use preconditions and required variables to enforce safety checks and confirm dangerous actions with user prompts prior to execution.
+
+### Incremental Builds with Fingerprinting
+Optimize build workflows by specifying `sources` and `generates` files, enabling Task to detect when outputs are up-to-date and skip redundant execution.
+
+### Advanced Looping and Matrix Builds
+Loop over lists, maps, sources, or dependencies for dynamic and complex task executions, including matrix permutations for multi-platform or build variant workflows.
+
+### Interactive and Deferred Commands
+Support running interactive CLI applications smoothly and scheduling deferred cleanup commands that execute regardless of task success or failure.
+
+---
+
+## Why Use Task?
+
+Integrating Task into your development workflow yields clear, measurable benefits:
+
+- **Boost Developer Productivity:** Eliminate manual repetition so you spend more time coding and less time running builds.
+- **Reduce Complexity:** Task’s clear syntax minimizes errors caused by complicated shell scripts and inconsistent build environments.
+- **Encourage Collaboration:** Share a single Taskfile across teams and CI systems for consistency.
+- **Accelerate CI/CD:** Take advantage of parallel dependencies and up-to-date checks to speed up build and deployment pipelines.
+
+
+### Real-World Scenarios
+
+- Running `task build` automatically executes all dependencies and build commands needed, regardless of platform.
+- Your test suite runs only when source files change, cutting down unnecessary test runs.
+- Developers can invoke `task deploy` safely with enforced environment variables and confirmation prompts.
+- Teams maintain a global Taskfile that provides handy common tasks accessible anywhere on the system.
+
+Before Task, running builds meant juggling occlusion-prone scripts or complex Makefiles. Now, a single human-readable Taskfile governs the full process seamlessly.
+
+---
+
+## Getting Started Preview
+
+Jumpstart your automation with these basic steps:
+
+1. Place a `Taskfile.yml` in your project root defining your tasks.
+2. Run `task <taskname>` to execute tasks by name, with dependencies handled automatically.
+3. Use flags such as `--list` to view available tasks and `--dry` to preview command execution.
+
+Refer to the [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile) guide to create your initial configuration.
+
+<Tip>
+Remember that Task automatically detects common Taskfile names and searches upwards in your directory tree. This means you can run Task commands from subdirectories and it will operate relative to your project root.
+</Tip>
+
+---
+
+Harness the power of Task to simplify and supercharge your build automation today. By codifying your workflows in easy-to-maintain Taskfiles, you gain consistency, agility, and clarity on every project.

@@ -1,0 +1,115 @@
+---
+title: "Bug Fixes and Patches"
+description: "Summary of bugs resolved and minor updates included in each release. Helps users stay aware of stability and reliability improvements relevant to their projects."
+---
+
+# Bug Fixes and Patches
+
+This page summarizes the bugs resolved and minor updates included in each Task release. It is designed to keep you informed about stability and reliability improvements directly impacting your projects, helping you maintain a smooth and predictable automation experience.
+
+---
+
+## Understanding Bug Fixes and Patches
+
+Bug fixes and patches ensure Task continues to run reliably and predictably by addressing issues ranging from minor user interface glitches to critical errors that could compromise automation workflows. This section provides a regularly updated overview of such fixes so you can track improvements relevant to your usage.
+
+### Why Track Bug Fixes and Patches?
+
+- **Stability Assurance**: Ensure your tasks run without unexpected interruptions caused by bugs.
+- **Reliability Enhancements**: Stay confident that automation outcomes are consistent across platforms and Task versions.
+- **Transparency**: Know what issues were identified and resolved, helping anticipate the potential impact on your workflow.
+- **Maintenance Planning**: Inform your upgrade decisions and schedule updates with clear understanding of bug fixes.
+
+---
+
+## Latest Bug Fixes and Minor Updates (Sample Highlights)
+
+### Version 3.45.4 (Released 2025-09-17)
+- Resolved an issue where the `cache-expiry` setting in `.taskrc.yml` was not properly recognized, improving caching reliability.
+- Corrected the recursive reading of `.taskrc.yml` files in parent directories, ensuring configuration consistency.
+- Fixed a hiccup with autocomplete functionality in subfolders when using the Zsh shell, streamlining developer experience.
+
+### Version 3.44.1 (Released 2025-07-23)
+- Internal tasks are now excluded from suggestions, avoiding confusion around un-callable tasks.
+- Addressed ARM platform install script failures that previously blocked installation.
+- Fixed fingerprinting problems when Taskfiles paths contained spaces, avoiding incorrect up-to-date calculations.
+
+### Version 3.43.1 (Released 2025-04-21)
+- Significant watcher improvements by migrating to the `fsnotify` library, greatly reducing CPU usage and enhancing responsiveness.
+- Wildcards can now match multiple tasks reliably, preventing missed matches during complex automation.
+- Looping over generated files enabled, providing more flexibility in task orchestration.
+
+### Version 3.39.1 (Released 2024-09-18)
+- Fixed duplicated help display issues to streamline command line output.
+- Resolved shell completions issues on Zsh and PowerShell when using recommended methods, improving shell integration.
+- Enhanced variable handling in `defer:` statements, avoiding unexpected template failures.
+
+---
+
+## How Bug Fixes Are Delivered
+
+Bug fixes and minor updates are shipped in patch releases that you can upgrade to without breaking changes. Each release lists resolved issues along with context on what was fixed and how it benefits the user experience.
+
+### Typical Contents of Bug Fix Releases
+
+- Corrected misbehaviors in feature execution, such as variable resolution, output formatting, or task detection.
+- Fixes for platform-specific quirks ensuring functionality across Windows, macOS, Linux, ARM, and other architectures.
+- Improvements to CLI behavior, shell completions, and integration points.
+- Stability patches addressing crashes, panics, and race conditions.
+- Refinements in experimental features to improve reliability before final release.
+
+---
+
+## Best Practices to Leverage Bug Fixes and Patches
+
+- **Keep Task Updated**: Regularly update Task to benefit from the latest fixes and improved workflows.
+- **Review Release Notes**: Before upgrading, review the bug fixes and resolved issues to understand impact.
+- **Test in Development**: Validate patch releases in staging environments when possible to catch potential side effects early.
+- **Report Issues**: Help improve Task by reporting bugs encountered, referencing existing releases where relevant.
+
+---
+
+## Troubleshooting Common Issues Addressed by Bug Fixes
+
+Some recurrent issues fixed in recent releases include:
+
+- **Autocomplete Failures**: When shell completions skip legitimate tasks or behave unexpectedly.
+- **Configuration File Loading**: `.taskrc.yml` or Taskfile reading errors, especially from nested directories.
+- **Fingerprinting and Up-to-Date Checks**: Incorrect task skipping due to wrong checksum or timestamp resolutions.
+- **Watcher Performance**: High CPU usage or delays when monitoring files for changes in watch mode.
+- **Cross-Platform Command Compatibility**: Commands like `cp`, `mkdir`, or `mv` not working seamlessly on Windows.
+
+If you're affected by such issues, verifying you are on the latest patch can often resolve them.
+
+---
+
+## Where to Find Detailed Bug Fix Information
+
+For detailed, release-specific bug fix information, please consult the [official Changelog page](https://taskfile.dev/changelog/release-highlights/bug-fixes-patches) and GitHub release notes. These sources provide full context on each fix, issue numbers, contributors, and upgrade guidance.
+
+---
+
+## Summary
+
+Bug fixes and patches are essential for the ongoing stability and quality of Task. We continuously monitor, identify, and resolve issues to ensure your automation computations are reliable, efficient, and smooth across environments.
+
+Make sure to keep your environment updated and consult this section regularly to stay informed about the latest fixes impacting your projects.
+
+---
+
+## Additional Resources
+
+- [Changelog - Version History and Release Timeline](https://taskfile.dev/changelog/release-highlights/version-history)
+- [New Features and Improvements](https://taskfile.dev/changelog/release-highlights/new-features-improvements)
+- [Breaking Changes & Migration Notes](https://taskfile.dev/changelog/compatibility-changes/breaking-changes-migrations)
+- [Installing Task](https://taskfile.dev/getting-started/prerequisites-installation/installing-task)
+- [Taskfile Structure and Best Practices](https://taskfile.dev/guides/getting-started-workflows/taskfile-structure-best-practices)
+- [Issues and Community Support](https://github.com/go-task/task/issues)
+
+<Tip>
+To ensure your automation remains resilient, always review patch release notes when planning upgrades and test critical workflows in a safe environment.
+</Tip>
+
+<Note>
+This page focuses exclusively on bug fixes and minor patches. For major feature additions or breaking changes, refer to the relevant release highlight pages.
+</Note>

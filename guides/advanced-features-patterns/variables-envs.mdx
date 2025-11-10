@@ -1,0 +1,392 @@
+---
+title: "Variables and Environment Management in Task"
+description: "Master dynamic automation by leveraging variables, environment variable inheritance, and dotenv integration. This guide covers how to define, override, and reference variables, as well as control how environment variables flow into your tasks."
+---
+
+# Variables and Environment Management in Task
+
+Master dynamic automation by leveraging variables, environment variable inheritance, and dotenv integration. This guide covers how to define, override, and reference variables, as well as control how environment variables flow into your tasks.
+
+---
+
+## Overview
+
+The powerful variables and environment management system in Task allows you to parameterize your tasks, reuse configurations, and seamlessly integrate with your system environment. This page explains how to effectively use **`vars`**, **`env`**, **dotenv files**, and the precedence and inheritance behaviors governing them, enabling you to build flexible and maintainable automation workflows.
+
+### What You Will Learn
+- How to define variables (`vars`) at global, task, and call-time levels
+- How to configure environment variables (`env`) globally and per-task
+- The interaction and overriding rules between `vars`, `env`, and system environment
+- Using dotenv files for environment variable injection
+- Managing dynamic variables computed from shell commands
+- Referencing variables and variable inheritance nuances
+
+### Prerequisites
+- Familiarity with basic Taskfile concepts and YAML syntax
+- Understanding of environment variables in shell environments
+- Basic knowledge of templating syntax in Task (see [Templating Reference](../reference/templating.md))
+
+### Expected Outcome
+By following this guide, you will gain mastery over variables and environment settings within Taskfiles, enabling you to create dynamic, reusable, and context-aware automation tasks that adapt effortlessly to different environments and inputs.
+
+### Time Estimate
+15-30 minutes depending on your familiarity with Task templating and environment handling.
+
+### Difficulty Level
+Intermediate
+
+---
+
+## 1. Understanding Variables (`vars`)
+
+Variables in Task are key-value pairs that you can define to parameterize commands and control task behavior. They are accessible within task commands via templating, using the `{{.VARIABLE_NAME}}` syntax.
+
+### 1.1 Variable Declaration Locations and Scoping
+Variables can be declared at different levels, each affecting scope and precedence:
+
+| Location           | Scope                           | Precedence    |
+|--------------------|--------------------------------|---------------|
+| Global (`vars` at root) | Available to all tasks          | Lowest        |
+| Included Taskfile Vars | Overrides including Taskfile's vars | Higher        |
+| Task-level `vars`   | Specific to a task              | Higher        |
+| Call-time `vars`    | Passed when calling a sub-task | Highest       |
+
+#### Example: Global and Task-Level Vars
+```yaml
+version: '3'
+
+vars:
+  GREETING: Hello from global
+
+tasks:
+  greet:
+    vars:
+      GREETING: Hello from task
+    cmds:
+      - echo "{{.GREETING}}"
+```
+Running `task greet` prints:
+
+```
+Hello from task
+```
+
+### 1.2 Variable Types Supported
+Task supports the following variable types:
+
+- `string`
+- `bool`
+- `int`
+- `float`
+- `array`
+- `map` (defined with a special `map:` key)
+
+```yaml
+vars:
+  BOOL: true
+  INT: 42
+  FLOAT: 3.14
+  ARRAY: [one, two, three]
+  MAP:
+    map:
+      key1: value1
+      key2: value2
+```
+
+### 1.3 Dynamic Variables (Computed with Shell Commands)
+Dynamic variables run shell commands whose output becomes the variable's value.
+
+```yaml
+tasks:
+  build:
+    vars:
+      GIT_COMMIT:
+        sh: git log -n 1 --format=%h
+    cmds:
+      - echo "Commit: {{.GIT_COMMIT}}"
+```
+
+This enables embedding real-time data such as git commits, timestamps, or system info into your tasks.
+
+### 1.4 Referencing Variables
+You can reference other variables within `vars` using templating syntax:
+
+```yaml
+vars:
+  VAR_A: A
+  VAR_B: '{{.VAR_A}}B'
+  VAR_C: '{{.VAR_B}}C'
+
+tasks:
+  print:
+    cmds:
+      - echo '{{.VAR_C}}'
+```
+Output:
+```
+ABC
+```
+
+Use `ref` for passing variables by reference to maintain type fidelity when passing complex data structures:
+
+```yaml
+tasks:
+  foo:
+    vars:
+      LIST: [A, B, C]
+    cmds:
+      - task: bar
+        vars:
+          LIST:
+            ref: .LIST
+
+  bar:
+    cmds:
+      - echo '{{index .LIST 0}}'  # Outputs 'A'
+```
+
+### 1.5 Variable Precedence Order
+When Task resolves variables, it follows this order of precedence (highest last):
+
+1. Variables passed at task call time (task calls and dependencies)
+2. Task-level `vars`
+3. Included Taskfile variables
+4. Global `vars` in the root Taskfile
+5. Environment variables
+
+<br>
+
+## 2. Environment Variables (`env`)
+
+While `vars` are used for templating within tasks, `env` defines environment variables available to the shell environment executing the commands.
+
+### 2.1 Defining Environment Variables
+You can define environment variables globally or per task:
+
+```yaml
+version: '3'
+
+env:
+  GLOBAL_VAR: global
+
+tasks:
+  example:
+    env:
+      TASK_VAR: task
+    cmds:
+      - echo "Global var: $GLOBAL_VAR, Task var: $TASK_VAR"
+```
+
+Output:
+```
+Global var: global, Task var: task
+```
+
+### 2.2 Interaction Between `vars` and `env`
+- Variables under `vars` are primarily for templating and string interpolation inside commands.
+- Variables under `env` become environment variables accessible at runtime inside shell commands.
+
+You can reference `vars` inside `env` using templating syntax:
+
+```yaml
+env:
+  PATH_VAR: '{{.SOME_VAR}}'
+```
+
+### 2.3 Overriding Environment Variables
+Task merges environment variables in this order:
+
+- System environment variables come first
+- Global `env` from the Taskfile overlays
+- Task-level `env` variables overlay global
+- Variables with unsupported types will be skipped
+
+When environment precedence is enabled (experimental), task's `env` variables override system environment variables.
+
+### 2.4 Dotenv Files
+Dotenv files inject environment variables from `.env`-style files.
+
+```yaml
+version: '3'
+dotenv: ['.env', '{{.ENV}}/.env']
+
+tasks:
+  show-env:
+    cmds:
+      - echo "DB_HOST=$DB_HOST"
+```
+
+Variables from dotenv files behave as environment variables and are overridden by explicitly set `env` variables.
+
+### 2.5 Task-level dotenv
+You can specify dotenv files for individual tasks:
+
+```yaml
+tasks:
+  test:
+    dotenv:
+      - '.env'
+    cmds:
+      - echo "$KEY_FROM_DOTENV"
+```
+
+### 2.6 Environment Variable Names
+Task-specific environment variables are prefixed with `TASK_` internally, so you can access task system environment variables by prefixing `TASK_`.
+
+```shell
+export TASK_NODE_VERSION=16
+```
+
+### 2.7 Shell Environment Forwarding
+Task always forwards the current process's environment variables into tasks unless explicitly overridden.
+
+---
+
+## 3. Variable and Environment Resolution Flow
+
+When a task is executed, Task compiles variables and environment variables through these steps:
+
+1. **Start with current OS environment variables.**
+2. **Inject special variables:** system info like task name, root directory, Task executable path.
+3. **Inject Taskfile `env` variables, respecting environment precedence rules.**
+4. **Inject Taskfile `vars` variables, evaluating dynamic variables (shell commands) as needed.**
+5. **Inject task-level `env` and `vars` variables, expanding templates with the current variable context.**
+6. **Add variables passed in task calls or dependencies, highest precedence.**
+
+Dynamic variables with `sh:` keys are executed once per task run and cached for reuse.
+
+After all the above, the final environment array is passed to the task shell commands.
+
+---
+
+## 4. Using Variables and Environment in Practice
+
+### 4.1 Defining Global and Task Environment Variables
+```yaml
+version: '3'
+
+env:
+  GREETING: "Hello"
+
+vars:
+  NAME: "World"
+
+tasks:
+  greet:
+    env:
+      GREETING: "Hi"
+    vars:
+      NAME: "Task"
+    cmds:
+      - echo "$GREETING, {{.NAME}}!"
+```
+Output:
+```
+Hi, Task!
+```
+
+### 4.2 Overriding Variables at Call Time
+```yaml
+tasks:
+  greet:
+    vars:
+      NAME: "Default"
+    cmds:
+      - echo "Hello, {{.NAME}}!"
+```
+Calling `task greet NAME=Bob` prints:
+```
+Hello, Bob!
+```
+
+### 4.3 Using Dynamic Variables
+```yaml
+tasks:
+  dynamic:
+    vars:
+      TODAY:
+        sh: date +%Y-%m-%d
+    cmds:
+      - echo "Today is {{.TODAY}}"
+```
+
+### 4.4 Referencing Variables Across Tasks
+You can pass variables to called tasks and included Taskfiles:
+
+```yaml
+tasks:
+  caller:
+    vars:
+      VAR: hello
+    cmds:
+      - task: callee
+        vars:
+          VAR: '{{.VAR}} world'
+
+  callee:
+    cmds:
+      - echo '{{.VAR}}'
+```
+
+### 4.5 Variables in Loops
+Use variables inside `for` loops:
+
+```yaml
+tasks:
+  loop:
+    vars:
+      FILES: foo.txt bar.txt
+    cmds:
+      - for: { var: FILES }
+        cmd: cat {{.ITEM}}
+```
+
+---
+
+## 5. Best Practices
+
+- **Always clearly scope variables:** Use global `vars` for project-wide constants and task-level `vars` for task-specific overrides.
+- **Use `env` for variables that your commands need as environment variables, not just for templating.**
+- **Prefer dynamic variables only when necessary,** as command executions add runtime overhead.
+- **Dotenv files are great for environment secrets and per-environment configurations,** but prefer explicit `env` for critical variables that must never be silently overridden.
+- **Pass variables explicitly when calling tasks** to make dependencies clearer and avoid hidden dependencies.
+- **Use the `.TASK` special variable to know the current task name at runtime.**
+
+---
+
+## 6. Troubleshooting
+
+### Problem: Environment variable overrides not working as expected
+- Verify Taskfile and task-level `env` variables
+- Check if experimental environment precedence feature is disabled (the default)
+- Remember OS environment variables are generally preserved unless overridden explicitly
+
+### Problem: Dynamic variable shell commands failing
+- Ensure your shell commands run successfully outside Task
+- Confirm the shell command output is as expected, no extra lines or failures
+- Check Task logs with `--verbose` to see dynamic variable evaluation
+
+### Problem: Variable references not resolving
+- Make sure the referenced variables exist in the current scope
+- Use `ref` to preserve non-string variable types
+- Validate that templating syntax uses `{{.VAR}}` correctly
+
+### Problem: Dotenv files not loading
+- Confirm the `dotenv` paths resolve correctly with templating
+- Check that the dotenv files exist and have readable permissions
+- Avoid using `dotenv` inside included Taskfiles (not currently supported)
+
+---
+
+## 7. Related Documentation and Next Steps
+- [Templating Reference](../reference/templating.md) — Learn how to interpolate and manipulate variables.
+- [Environment Reference](../reference/environment.md) — Detailed Task environment variables and system integration.
+- [Taskfile Structure and Best Practices](../guides/getting-started-workflows/taskfile-structure-best-practices.md) — Organize and structure variables effectively.
+- [Including Other Taskfiles](../guides/advanced-features-patterns/task-dependencies-includes.md) — Variable inheritance across Taskfiles.
+- [CLI Reference](../reference/cli.md) — How to pass variables and environment flags from the command line.
+
+
+
+---
+
+Happy automating with smart use of variables and environment management in Task!

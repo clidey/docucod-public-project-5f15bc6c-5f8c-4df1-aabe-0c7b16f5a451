@@ -1,0 +1,415 @@
+---
+title: "Conditional Execution, Matrix Builds, and Loops"
+description: "Automate builds that run differently based on conditions or need to repeat tasks across a matrix of variables. Explore Taskfile patterns for conditions, matrix builds, and loops to streamline CI/CD and multi-environment workflows."
+---
+
+# Conditional Execution, Matrix Builds, and Loops
+
+Automate your builds with dynamic behavior using conditions, looping constructs, and matrix builds in your Taskfiles. This guide explores how to leverage Task's powerful patterns for conditional task execution, creating build matrices, and iterating over collections or file sets to make your CI/CD workflows and multi-environment automation scalable and efficient.
+
+---
+
+## Workflow Overview
+
+### What You'll Accomplish
+- Learn how to write tasks that execute conditionally based on preconditions or required variables.
+- Implement loops inside commands and dependencies to repeat commands across lists, matrices, or file sets.
+- Use matrix builds to run tasks for every combination of multiple variables.
+- Apply conditional logic patterns to streamline complex automation scenarios.
+
+### Prerequisites
+- Basic understanding of Taskfiles syntax and structure.
+- Familiarity with variables, templating, and task definitions.
+- A configured environment with Task installed and a sample Taskfile ready.
+
+### Expected Outcome
+By completing this guide, you will be able to define Taskfile tasks that:
+- Conditionally run based on environment or variable checks.
+- Loop through lists, matrices, sources, or generated files.
+- Scale builds and tests against different permutations of environment variables.
+- Pass loop variables cleanly in dependencies and commands.
+
+### Time Investment
+15-30 minutes depending on practice and Taskfile complexity.
+
+### Skill Level
+Intermediate — requires some knowledge of YAML, templating, and task automation.
+
+---
+
+## Conditional Execution Patterns
+
+### Preconditions and Requires
+
+Preconditions allow you to specify shell commands that *must succeed* before a task runs. Use this to avoid running a task if certain criteria aren’t met.
+
+```yaml
+version: '3'
+
+tasks:
+  deploy:
+    preconditions:
+      - sh: test -n "$API_KEY"
+        msg: 'API_KEY must be set to deploy'
+    cmds:
+      - ./deploy.sh
+```
+
+- If the precondition fails, Task stops execution with an error.
+- Use `msg` to provide user-friendly failure messages.
+
+The `requires` keyword performs variable presence and value checks before execution:
+
+```yaml
+version: '3'
+tasks:
+  deploy:
+    requires:
+      vars:
+        - API_KEY
+        - name: ENVIRONMENT
+          enum: [development, staging, production]
+    cmds:
+      - echo "Deploying to {{.ENVIRONMENT}}"
+      - ./deploy.sh
+```
+
+- `requires` checks both environment and Taskfile variables.
+- Enums restrict allowed values ensuring valid input.
+
+### Best Practices
+
+- Use preconditions for shell-level checks and complex conditions.
+- Use requires for simple variable presence or enumeration constraints.
+- Always include descriptive messages to help users fix issues quickly.
+
+---
+
+## Looping Over Collections
+
+Task supports multiple loop patterns at the command (`cmds`) level and dependency (`deps`) level, enabling you to repeat actions with variable substitution.
+
+### Basic Loop Over a List
+
+Explicitly loop over a fixed list of items:
+
+```yaml
+version: '3'
+tasks:
+  greet-all:
+    cmds:
+      - for: [alice, bob, charlie]
+        cmd: echo "Hello {{.ITEM}}"
+```
+
+Expected output:
+```
+Hello alice
+Hello bob
+Hello charlie
+```
+
+### Loop Over Variables
+
+Loop over variable contents split by whitespace or a custom delimiter:
+
+```yaml
+version: '3'
+tasks:
+  greet:
+    vars:
+      NAMES: alice,bob,charlie
+    cmds:
+      - for:
+          var: NAMES
+          split: ','
+        cmd: echo "Hi {{.ITEM}}"
+```
+
+### Loop Over Arrays or Maps
+
+If your variable is a typed list or map, Task can iterate directly:
+
+```yaml
+version: 3
+
+tasks:
+  direct-loop:
+    vars:
+      USERS: [alice, bob, charlie]
+    cmds:
+      - for:
+          var: USERS
+        cmd: echo "User: {{.ITEM}}"
+```
+
+For maps, you can also use the `{{.KEY}}` variable alongside `{{.ITEM}}`:
+
+```yaml
+version: '3'
+tasks:
+  user-info:
+    vars:
+      USER_MAP:
+        map:
+          alice: admin
+          bob: editor
+    cmds:
+      - for:
+          var: USER_MAP
+        cmd: echo "User {{.KEY}} has role {{.ITEM}}"
+```
+
+### Renaming Loop Variables
+
+You can replace the default `ITEM` iterator variable name with a more descriptive name:
+
+```yaml
+version: '3'
+tasks:
+  greet-named:
+    vars:
+      NAMES: alice bob
+    cmds:
+      - for:
+          var: NAMES
+          as: NAME
+        cmd: echo "Hello {{.NAME}}"
+```
+
+### Loop Over Task Sources or Generated Files
+
+You can iterate over `sources` or `generates` globs configured on the task:
+
+```yaml
+version: '3'
+tasks:
+  process-files:
+    sources:
+      - '*.txt'
+    cmds:
+      - for: sources
+        cmd: cat '{{.ITEM}}'
+```
+
+Paths are returned relative to the Taskfile directory. Use functions like `joinPath` for absolute paths.
+
+### Loop Over a Matrix
+
+Matrix looping lets you iterate through all permutations of multiple variable lists:
+
+```yaml
+version: '3'
+tasks:
+  test-matrix:
+    cmds:
+      - for:
+          matrix:
+            OS: ['windows', 'linux']
+            ARCH: ['amd64', 'arm64']
+        cmd: echo "Testing {{.ITEM.OS}}/{{.ITEM.ARCH}}"
+```
+
+Output:
+```
+Testing windows/amd64
+Testing windows/arm64
+Testing linux/amd64
+Testing linux/arm64
+```
+
+You can use variable references for matrix values:
+
+```yaml
+vars:
+  OS_VAR: ['windows', 'linux']
+  ARCH_VAR: ['amd64', 'arm64']
+
+tasks:
+  test-matrix-referenced:
+    cmds:
+      - for:
+          matrix:
+            OS:
+              ref: .OS_VAR
+            ARCH:
+              ref: .ARCH_VAR
+        cmd: echo "Testing {{.ITEM.OS}}/{{.ITEM.ARCH}}"
+```
+
+### Looping in Dependencies
+
+Loops work identically inside dependencies, allowing concurrent runs:
+
+```yaml
+version: '3'
+tasks:
+  build-all:
+    deps:
+      - for: [frontend, backend]
+        task: build
+        vars:
+          SERVICE: '{{.ITEM}}'
+
+  build:
+    cmds:
+      - echo "Building {{.SERVICE}}"
+```
+
+Note: Dependencies run concurrently, so execution order is not guaranteed.
+
+### Best Practices for Loops
+
+- Use explicit lists for simple iteration.
+- Use variables or references for dynamic data.
+- Use matrix looping for multi-dimensional test/build matrices.
+- Prefer naming loop variables with `as` for clarity.
+- Use loops in deps for parallel subtask execution.
+
+---
+
+## Conditional Task Execution with Loops and Matrix Builds
+
+You can combine looping and conditional execution patterns for flexible automated workflows:
+
+- Use `preconditions` or `requires` to gate execution.
+- Loop over a matrix to vary environments or configurations.
+- Use vars and templates to inject loop data dynamically.
+- For example, conditional building of multiple targets on different platforms:
+
+```yaml
+version: '3'
+
+vars:
+  PLATFORMS:
+    map:
+      windows:
+        build_cmd: build-windows.exe
+      linux:
+        build_cmd: build-linux
+
+tasks:
+  build-all:
+    cmds:
+      - for:
+          var: PLATFORMS
+          as: PLATFORM
+        cmd: task build-{{.KEY}}
+
+  build-windows:
+    preconditions:
+      - echo $OS | grep -i windows
+    cmds:
+      - echo "Building Windows executable with {{index .PLATFORMS "windows" "build_cmd"}}"
+      - go build -o build-windows.exe .
+
+  build-linux:
+    preconditions:
+      - echo $OS | grep -i linux
+    cmds:
+      - echo "Building Linux executable with {{index .PLATFORMS "linux" "build_cmd"}}"
+      - go build -o build-linux .
+```
+
+This example demonstrates gating platform-specific build tasks with preconditions, running them from a loop in the main task.
+
+---
+
+## Troubleshooting & Tips
+
+### Common Pitfalls
+
+- **Matrix value must be a list:** Referenced variables used in matrix must be lists or arrays; strings or wrong types will cause errors.
+- **Loop variable values not replaced:** Use proper template syntax (`{{.ITEM}}` or renamed variable) to access loop values.
+- **Dependency loops run unordered:** Remember that dependencies run concurrently, not sequentially.
+- **Precondition failing silently:** Make sure you provide meaningful `msg` fields or check task logs.
+- **Looping over sources with no matching files:** Verify your `sources` globs with the shell to confirm matches.
+
+### Best Practices
+
+- Use `ref` for passing proper typed variables to loops and tasks.
+- Name loop variables using `as` for improved readability.
+- Combine `prompt` with preconditions for safe actions requiring confirmation.
+- When looping over complex matrices, break down tasks into smaller, reusable subtasks.
+
+---
+
+## Examples
+
+### Loop Over a Static List in Commands
+
+```yaml
+version: '3'
+tasks:
+  greet:
+    cmds:
+      - for: [alice, bob, charlie]
+        cmd: echo "Hello {{.ITEM}}"
+```
+
+### Loop Over Matrix in Command
+
+```yaml
+version: '3'
+
+vars:
+  OS_VAR: ['windows', 'linux']
+  ARCH_VAR: ['amd64', 'arm64']
+
+tasks:
+  test-matrix:
+    cmds:
+      - for:
+          matrix:
+            OS:
+              ref: .OS_VAR
+            ARCH:
+              ref: .ARCH_VAR
+        cmd: echo "Testing {{.ITEM.OS}}/{{.ITEM.ARCH}}"
+```
+
+### Loop Over Task Dependencies
+
+```yaml
+version: '3'
+
+tasks:
+  test-all:
+    deps:
+      - for: [unit, integration]
+        task: test-{{.ITEM}}
+
+  test-unit:
+    cmds:
+      - echo 'Running unit tests'
+
+  test-integration:
+    cmds:
+      - echo 'Running integration tests'
+```
+
+### Conditional Task With Requires Variable Check
+
+```yaml
+version: '3'
+tasks:
+  deploy:
+    requires:
+      vars:
+        - API_KEY
+    cmds:
+      - echo "Deploying with API_KEY {{.API_KEY}}"
+      - ./deploy.sh
+```
+
+---
+
+## Next Steps & Related Guides
+
+- **[Variables and Environment Management in Task](/guides/advanced-features-patterns/variables-envs):** Master dynamic variables and environment integration.
+- **[Managing Task Dependencies and Includes](/guides/advanced-features-patterns/task-dependencies-includes):** Build modular Taskfiles with includes and dependency management.
+- **[Typical Workflows with Task](/guides/getting-started-workflows/typical-workflows):** Explore common automation recipes.
+- **[Templating Reference](/docs/reference/templating):** Learn about Task's templating syntax and functions essential for managing conditional logic and variable interpolation.
+- **[Taskfile Schema Reference](/docs/reference/schema):** Deep dive into Taskfile schema properties relevant to loops, matrix, and conditional execution.
+
+Explore these guides to deepen your automation capabilities and transform complex builds into streamlined workflows.

@@ -1,0 +1,166 @@
+---
+title: "Community Patterns and Advanced Recipes"
+description: "Explore curated Taskfile patterns from the community, including multi-project setups, monorepos, and API projects. Learn from examples that address edge cases and creative uses of Task."
+---
+
+# Community Patterns and Advanced Recipes
+
+Welcome to the showcase of practical Taskfile patterns curated from the community. This page is designed for users who want to explore real-world Task automation recipes, including setups for multi-project environments, monorepos, API project workflows, and solutions to edge cases. These examples serve as inspiration and ready-to-adapt templates for structuring your automation with Task.
+
+---
+
+## 1. Understanding the Scope of This Guide
+
+### What This Guide Helps You Accomplish
+- Discover reusable Taskfile patterns created by the community to handle complex automation scenarios.
+- Learn practical recipes for multi-project builds, monorepos, API-driven tasks, and more.
+- Gain insight into handling edge cases creatively and maintaining scalable Taskfiles.
+
+### Prerequisites
+- Familiarity with basic Taskfile syntax and concepts such as tasks, variables, and dependencies.
+- Task installed and functioning on your system (refer to [Installing Task](../getting-started/prerequisites-installation/installing-task)).
+- Basic understanding of your project's structure and automation needs.
+
+### Expected Outcome
+- You will understand how to apply community-tested Taskfile patterns to your own projects.
+- Be able to customize multi-project and monorepo Taskfiles for your workflows.
+- Handle complex scenarios like modular API project automations with confidence.
+
+### Time Estimate
+- Reviewing examples and adapting them to your use case may take 30 minutes to 1 hour initially.
+- Implementing and testing patterns will depend on your project complexity.
+
+### Difficulty Level
+Intermediate to Advanced — These patterns focus on scalable and creative uses of Task beyond basic automation.
+
+---
+
+## 2. Exploring Community-Driven Taskfile Patterns
+
+These patterns reflect practical strategies and best practices shaped by real user experiences.
+
+### Multi-Project Setup
+Handling automation across multiple related projects often involves managing dependencies and modular Taskfiles.
+
+#### Key Concepts:
+- Use `includes` to integrate Taskfiles from each subproject.
+- Define namespaces or aliases for task accessibility.
+- Share common variables and environment settings.
+
+#### Benefits:
+- Avoid duplication by centralizing shared automation steps.
+- Enable independent task execution per project with combined orchestration.
+
+### Monorepo Pattern
+Monorepos contain several projects or packages in a single repository, requiring flexible task definitions.
+
+#### Key Concepts:
+- Scoped namespaces representing each package or project.
+- Conditional task execution based on modified files or project-specific variables.
+- Task dependencies cross-referencing between subprojects for build or test chaining.
+
+#### Example Use Case:
+- Running linting only on the packages with changed code.
+- Sequential builds that respect inter-package dependencies.
+
+### API Project Recipes
+Complex API projects benefit from tailored Taskfiles that automate building, testing, and deployment.
+
+#### Key Concepts:
+- Tasks for generating API clients or documentation.
+- Dependency tasks that ensure schema synchronization before building.
+- Environment-aware tasks targeting multiple deployment stages.
+
+### Edge Case Solutions
+Community patterns also reveal creative solutions for challenges that don't fit typical workflows.
+
+#### Some Examples:
+- Custom caching strategies for resource-intensive tasks.
+- Dynamic task generation using loops and conditionals.
+- Handling platform-specific commands and environments gracefully.
+
+---
+
+## 3. Practical Example: Multi-Project Taskfile Pattern
+
+```yaml
+version: '3'
+
+includes:
+  shared: ./shared/Taskfile.yml
+  lib1: ./libs/lib1/Taskfile.yml
+  lib2: ./libs/lib2/Taskfile.yml
+
+tasks:
+  default:
+    desc: "Run build for all projects"
+    deps:
+      - shared:build
+      - lib1:build
+      - lib2:build
+
+  clean-all:
+    desc: "Clean all projects"
+    cmds:
+      - task: shared:clean
+      - task: lib1:clean
+      - task: lib2:clean
+
+```
+
+> This example demonstrates including multiple Taskfiles for subprojects and orchestrating builds and cleans across them with namespace prefixes.
+
+---
+
+## 4. Tips and Best Practices for Applying Community Patterns
+
+- **Start Simple:** Adapt community patterns by starting small and gradually integrating more complex features.
+- **Namespace Clearly:** Use clear, consistent namespaces when including Taskfiles to avoid task name collisions.
+- **Use Variables Effectively:** Leverage shared variables for paths, common flags, and environment details.
+- **Document Your Tasks:** Use the `desc` field to make tasks self-explanatory and facilitate discoverability.
+- **Test Incrementally:** Run and verify automations step-by-step when integrating community patterns.
+- **Watch for Edge Conditions:** Some patterns use advanced features like conditional tasks or loops — understand those fully before applying.
+
+<Note>
+Community patterns often incorporate advanced Task capabilities like includes, dependencies, and variables. Refer back to the foundational documentation on these topics for clarity.
+</Note>
+
+---
+
+## 5. Troubleshooting Common Issues
+
+### Included Taskfiles Not Found or Not Loading
+- Confirm relative paths are correct.
+- Ensure included Taskfiles have the correct YAML syntax.
+
+### Task Name Conflicts
+- Use namespaces and aliases to uniquely identify tasks across included files.
+
+### Unexpected Task Execution Order
+- Verify dependencies order and use explicit dependency declarations.
+
+### Hard to Debug Complex Taskflows
+- Increase Task’s verbosity (`task -v`) to trace execution.
+- Isolate and run subproject tasks independently to debug.
+
+---
+
+## 6. Next Steps
+
+After experimenting with these community patterns, consider exploring:
+
+- **[Managing Task Dependencies and Includes](../guides/advanced-features-patterns/task-dependencies-includes)** for a thorough understanding of composing modular Taskfiles.
+- **[Variables and Environment Management in Task](../guides/advanced-features-patterns/variables-envs)** to master dynamic and scoped variable usage.
+- **[Conditional Execution, Matrix Builds, and Loops](../guides/advanced-features-patterns/conditional-tasks-matrix-for)** to incorporate more dynamic automation flows.
+
+To deepen your knowledge on Task's core features and best practices, review:
+
+- [Designing Clean and Maintainable Taskfiles](../guides/getting-started-workflows/taskfile-structure-best-practices)
+- [Common Developer Workflows with Task](../guides/getting-started-workflows/typical-workflows)
+
+---
+
+## Summary
+This page gathered and explained community-contributed Taskfile patterns focusing on real-world advanced usage, including multi-project, monorepo, and API automation. It aims to inspire and empower you to apply sophisticated, practical Task automation strategies in your projects.
+
+---

@@ -1,0 +1,146 @@
+---
+title: "Speeding Up Taskfile Execution"
+description: "Tips and solutions for improving Task execution performance: managing task dependencies, concurrency, selective task runs, and recommended settings for larger codebases. Includes advice on output modes and logging impact."
+---
+
+# Speeding Up Taskfile Execution
+
+Efficient automation is crucial for maintaining developer productivity, especially as project complexity grows. This page guides you through practical strategies to improve Task's execution speed by optimizing task dependencies, leveraging concurrency, selectively running tasks, and configuring Task’s output and logging behavior. By following these recommendations, you can ensure Taskfile execution runs fast, predictable, and well-suited for large or complex codebases.
+
+---
+
+## 1. Manage Task Dependencies Wisely
+
+Task automatically resolves and executes dependencies between tasks. However, excessive or unnecessary dependencies can slow down execution.
+
+- **Define only essential dependencies:** Avoid chaining tasks unnecessarily. Each dependency adds overhead as Task evaluates and runs dependent tasks.
+- **Use `run: once` for included/shared tasks:** When including Taskfiles or sharing common tasks, marking them with `run: once` prevents redundant executions.
+- **Leverage selective dependencies:** Use conditional dependencies and `preconditions` (see related docs) to ensure only relevant tasks run.
+
+### Example
+```yaml
+tasks:
+  build:
+    cmds:
+      - go build -o bin/app
+    deps:
+      - generate:run: once  # only run once even if multiple tasks depend on it
+  generate:
+    cmds:
+      - go generate ./...
+```
+
+This setup ensures `generate` runs once even if multiple tasks depend on it.
+
+---
+
+## 2. Enable and Configure Concurrency
+
+Task supports concurrent execution of tasks to speed workflows:
+
+- Use the `--concurrency` (`-C`) flag to specify how many tasks run in parallel. Choose a level appropriate to your system resources.
+- Tasks with dependencies will not be run until their dependencies complete.
+- Combine concurrency with `--watch` mode for responsive, parallel task runs during development.
+
+### Example
+```bash
+task test --concurrency 4
+```
+
+This runs up to 4 tasks concurrently, improving throughput.
+
+### Best Practices
+- Avoid setting concurrency too high, which can overwhelm I/O or CPU resources.
+- For IO-heavy tasks (e.g., file operations), concurrency values of 4-8 often work well.
+- For CPU-heavy compilation tasks, test batch sizes matched to available CPU cores.
+
+---
+
+## 3. Selectively Run Tasks to Avoid Unnecessary Work
+
+Avoid running all tasks when only parts of the project changed:
+
+- Use task names with namespaces to target subsets, e.g., `task lint.js` or `task test.unit`.
+- Use task arguments and variable overrides to further scope runs dynamically.
+- Combine with `--list` and `--dry` flags to preview what will run.
+
+### Example
+```bash
+task deploy.production
+task tests.integration --dry
+```
+
+Only runs the selected task or previews without actual execution.
+
+---
+
+## 4. Optimize Output and Logging
+
+Verbose logging and output modes can slow down execution due to overhead:
+
+- Use `output: prefixed` or `output: group` modes to get clean, grouped output with less overhead than interleaved output.
+- Disable or limit verbose logging unless debugging.
+- Use silent mode (`silent: true` on tasks or `--silent`) when output detail is unnecessary.
+
+### Best Practices
+- Prefer concise logs in CI pipelines to reduce noise.
+- Enable verbose only during development or troubleshooting.
+
+---
+
+## 5. Recommended Settings for Large Codebases
+
+Large projects benefit from configuration tuned to scale:
+
+- Set a global `method:` (default is `checksum`) to use efficient up-to-date checks for all tasks.
+- Use `sources:` and `generates:` metadata carefully to enable precise incremental builds.
+- Regularly review fingerprints and generated files for consistency.
+- Clean stale cache and checksum files periodically.
+
+### Example
+```yaml
+method: checksum
+
+# Root level method applies to all tasks unless overridden
+```
+
+Combined with clear `sources` and `generates` declarations, this ensures minimal work is done.
+
+---
+
+## 6. Troubleshooting Performance Issues
+
+If tasks take longer than expected:
+
+- Verify no extraneous tasks run by accident using `--dry` and `--list`.
+- Check for tasks with unnecessary dependencies or circular dependencies.
+- Profile your system resources during runs to identify bottlenecks.
+- Limit concurrency if resource contention occurs.
+- Inspect output mode and logging settings.
+
+---
+
+## 7. Summary
+
+By thoughtfully managing dependencies, leveraging concurrency, selectively running tasks, and optimizing output, you can dramatically speed up your Task automation workflows. These strategies lead to more responsive and scalable builds suitable for both local development and CI/CD environments.
+
+---
+
+## Related Documentation
+- [Managing Task Dependencies and Includes](/guides/advanced-features-patterns/task-dependencies-includes)
+- [Concurrency and Parallel Task Execution](/concepts/robustness-and-performance/concurrency-and-parallelism)
+- [Output Management and Logging](/concepts/robustness-and-performance/output-management)
+- [Understanding Up-to-Date Checks](/faq/performance-optimization/uptodate-checks-behavior)
+- [Taskfile Structure and Best Practices](/guides/getting-started-workflows/taskfile-structure-best-practices)
+
+---
+
+## Practical Tips
+- Regularly audit your Taskfile for unnecessarily complex dependency trees.
+- Always verify up-to-date check configuration to avoid redundant runs.
+- Experiment with different concurrency levels suitable for your environment.
+- Use the dry run and list commands frequently to understand task execution paths.
+
+<Tip>
+Optimizing Taskfile execution is an ongoing process; start with minimal dependencies and low concurrency, then gradually tune based on your workflow characteristics.
+</Tip>

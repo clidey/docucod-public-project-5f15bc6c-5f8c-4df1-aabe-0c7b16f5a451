@@ -1,0 +1,277 @@
+---
+title: "Variables, Templating, and Inheritance"
+description: "See how variables and templating work in Taskfiles to enable reuse, parameterization, and dynamic execution. Understand scoping, precedence, and the templating engine that powers flexible automation."
+---
+
+# Variables, Templating, and Inheritance
+
+Task is designed for flexible automation by letting you define and reuse variables dynamically. This page explains how variables, templating, and inheritance work within Taskfiles to help you parameterize tasks, create reusable workflows, and adapt execution dynamically.
+
+---
+
+## Understanding Variables in Task
+
+Variables in Task are the building blocks for customization and dynamic behavior. They can be defined globally, per Taskfile, within individual tasks, or passed when calling tasks.
+
+### Types of Variables
+
+Task supports multiple variable types, including:
+
+- **String** (e.g., `'Hello, World!'`)
+- **Boolean** (`true` or `false`)
+- **Integer** (`42`)
+- **Float** (`3.14`)
+- **Arrays** (e.g., `[1, 2, 3]`)
+- **Maps** (defined with a special `map` subkey)
+
+You can also have **dynamic variables**, whose values come from shell commands executed at runtime.
+
+### Where to Define Variables
+
+Variables can be defined in various scopes with descending precedence:
+
+1. **Task-level Vars**: `vars:` inside a specific task.
+2. **Vars passed when calling a task**: e.g., using `vars:` with `task:` commands to pass overrides.
+3. **Included Taskfile Vars**: Variables from included Taskfiles.
+4. **Vars specified when including a Taskfile**: to customize the included set.
+5. **Global Taskfile Vars**: The `vars:` section at the root of the Taskfile.
+6. **Environment Variables**: OS environment variables.
+
+This precedence allows fine-grained variable control and flexibility.
+
+### Example: Defining Variables
+
+```yaml
+version: '3'
+
+vars:
+  GLOBAL_VAR: 'global'
+
+tasks:
+  example-task:
+    vars:
+      LOCAL_VAR: 'local'
+    cmds:
+      - echo "Global: {{.GLOBAL_VAR}}"
+      - echo "Local: {{.LOCAL_VAR}}"
+```
+
+Output:
+
+```
+Global: global
+Local: local
+```
+
+### Dynamic Variables
+
+You can define dynamic variables that run a shell command and use its output as the variable's value. This is defined via the `sh:` syntax.
+
+```yaml
+vars:
+  GIT_COMMIT:
+    sh: git log -n 1 --format=%h
+
+tasks:
+  version:
+    cmds:
+      - echo "Current commit: {{.GIT_COMMIT}}"
+```
+
+The output of the command is trimmed and used as the variable's value at runtime.
+
+---
+
+## Templating Engine: How Variables Are Interpolated
+
+Task uses Go's `text/template` system with added functions, allowing powerful templating inside Taskfiles.
+
+### Basic Templating
+
+Use double curly braces `{{ ... }}` to interpolate variables in strings.
+
+```yaml
+tasks:
+  hello:
+    vars:
+      NAME: World
+    cmds:
+      - echo "Hello, {{.NAME}}!"
+```
+
+Outputs: `Hello, World!`
+
+### Functions and Pipelines
+
+Functions from the [slim-sprig library](https://sprig.taskfile.dev/) are available for string operations, math, date/time, and more.
+
+Example:
+
+```yaml
+vars:
+  number: 42
+
+cmds:
+  - echo "Number plus 10: {{add .number 10}}"
+```
+
+### Special Variables
+
+Task automatically provides special variables such as:
+
+- `TASK`: Current task name
+- `ALIAS`: Alias used for the task
+- `ROOT_DIR`, `TASKFILE_DIR`, `USER_WORKING_DIR`: Important directory paths
+- `CLI_ARGS`: Extra CLI arguments passed after `--`
+
+Use these anywhere in templates to produce dynamic, contextual commands.
+
+---
+
+## Variable References and Passing Non-Strings
+
+Because templating outputs strings, passing complex variable types between tasks needs references instead of simple string interpolation.
+
+### Using `ref` to Preserve Variable Types
+
+When you need to pass arrays, maps, or other types between tasks while preserving their nature, use the `ref` keyword.
+
+```yaml
+tasks:
+  foo:
+    vars:
+      LIST: [foo, bar, baz]
+    cmds:
+      - task: bar
+        vars:
+          LIST:
+            ref: .LIST
+
+  bar:
+    cmds:
+      - echo '{{index .LIST 0}}' # Outputs "foo"
+```
+
+This keeps the variable as an array, allowing functions like `index` to work correctly.
+
+### Passing Sliced or Computed Variable References
+
+You can also use functions inside references:
+
+```yaml
+vars:
+  LIST: [a, b, c]
+
+cmds:
+  - task: subtask
+    vars:
+      ITEM:
+        ref: index .LIST 0
+```
+
+---
+
+## Variable Inheritance and Overriding in Taskfiles
+
+Variables at different levels combine and override based on the scope of execution.
+
+### Inheritance Flow
+
+- Global vars from the root Taskfile are available everywhere unless shadowed.
+- Included Taskfiles get their own vars merged in, with included Taskfile vars preferred.
+- Task-level vars override any global or included vars.
+- When calling tasks within commands or deps, vars passed explicitly take highest precedence.
+
+### Example Inheritance Use Case
+
+```yaml
+vars:
+  GREETING: Hello
+
+includes:
+  common:
+    taskfile: ./common/Taskfile.yml
+    vars:
+      GREETING: Hi
+
+tasks:
+  greet:
+    vars:
+      GREETING: Hey
+    cmds:
+      - echo "{{.GREETING}}, User!"
+```
+
+Calling `task greet` will output: `Hey, User!` as the task-level var `GREETING` overrides all others.
+
+---
+
+## Practical Tips & Common Pitfalls
+
+- **Always use `ref` when passing complex variable types between tasks to avoid unintended string conversion.**
+- **Use dynamic variables (`sh:`) sparingly for performance; cache results if you reuse them in multiple places.**
+- **Remember that variable resolution happens before runtime; complex shell-dependent logic should rely on dynamic vars or commands.**
+- **To avoid surprising behavior, be mindful of the variable precedence when mixing global, included, and local vars.**
+
+---
+
+## How Variables Are Resolved Internally (User Perspective)
+
+When you run a task, Task builds a variable map using:
+
+1. Environment variables
+2. Special variables (like current task name or root paths)
+3. Global vars
+4. Included Taskfile vars
+5. Task-level vars
+6. Vars passed on `task:` calls
+
+Using the templating engine, all variable references `{{.VAR}}` are replaced by their resolved values across this hierarchy with proper error checking. Dynamic variables are executed once and cached.
+
+This flow ensures your variables are always up-to-date and ready to drive your automation.
+
+---
+
+## Troubleshooting Variable Issues
+
+<AccordionGroup title="Common Variable Issues and Solutions">
+<Accordion title="Variables Not Expanding as Expected">
+Make sure you are using the correct double curly braces syntax: `{{.VAR_NAME}}`. Check for typos and ensure the variable exists in the applicable scope. Use `task --verbose` to see variable resolution details.
+</Accordion>
+<Accordion title="Passing Complex Variables Between Tasks Converts to Strings">
+Use `ref` to pass variables by reference, which preserves their original types such as arrays or maps. Avoid passing complex variables via string interpolation.
+</Accordion>
+<Accordion title="Dynamic Variables Not Updating">
+Dynamic variables run their shell commands once and cache results during execution. If you need fresh values per task invocation, ensure variables are redefined or clear the cache by restarting Task.
+</Accordion>
+<Accordion title="Templating Syntax Errors">
+Errors in template functions or missing variables halt execution. Simplify templates step-by-step to isolate errors. Consult the templating reference for supported syntax and functions.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Summary
+- Variables in Task can be of many types and defined in multiple scopes.
+- The templating engine is the core for injecting variables into commands dynamically.
+- Use the `ref` keyword to pass variable references preserving types.
+- Variable inheritance applies precedence rules for consistent overrides.
+- Dynamic variables allow executing shell commands for variable values.
+- Special variables provide contextual runtime information.
+
+This conceptual understanding enables you to author flexible, reusable, and clean Taskfiles.
+
+---
+
+## Additional Resources
+
+- [Templating Reference](/docs/reference/templating) - Complete guide to Task's templating functions and syntax.
+- [Variables and Environment Management](/guides/advanced-features-patterns/variables-envs) - Hands-on guide to advanced variable handling.
+- [Including Taskfiles and Inheritance](/concepts/integration-extensions/includes-and-modularization) - How inherited vars behave across included Taskfiles.
+- [Typical Workflows](/guides/getting-started-workflows/typical-workflows) - Learn practical patterns to use variables in daily automation.
+
+---
+
+This Page fits into the overall Concepts documentation as the foundational explanation of variables, templating, and inheritance—the fabric that underpins dynamic task automation in Task.
+
+---

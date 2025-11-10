@@ -1,0 +1,272 @@
+---
+title: "Troubleshooting Setup Issues"
+description: "Identify and resolve frequent setup and installation problems. This page provides actionable solutions for the most common roadblocks, error messages, and environment misconfigurations encountered by new users."
+---
+
+# Troubleshooting Setup Issues
+
+Setup and installation errors can interrupt your progress with Task. This guide helps you quickly identify and resolve the most common problems encountered during initial setup and first runs, so you can confidently move forward.
+
+---
+
+## 1. Common Setup Problems and How to Fix Them
+
+### 1.1 Taskfile Not Found (Exit Code 100)
+**Symptoms:**
+- Running `task` in a directory without a valid Taskfile.
+- Error output:
+  ```
+task: No Taskfile found
+```
+
+**Cause:**
+Task cannot find any Taskfile in the current directory or parent directories.
+
+**Solution:**
+1. Ensure you have created a Taskfile named one of the following (case-sensitive):
+   - `Taskfile.yml`
+   - `taskfile.yml`
+   - `Taskfile.yaml`
+   - `taskfile.yaml`
+   - One of the `.dist` variants if you are using those.
+2. Confirm you're in the right working directory where your Taskfile resides.
+3. You can create a basic Taskfile with:
+   ```bash
+   task --init
+   ```
+4. Use the `--taskfile` flag to specify a Custom Taskfile location:
+   ```bash
+   task --taskfile ./custom/Taskfile.yml
+   ```
+
+---
+
+### 1.2 Invalid or Unparseable Taskfile (Exit Code 102)
+**Symptoms:**
+- Errors indicating YAML parsing failure or invalid Taskfile syntax.
+- Execution terminates with:
+  ```
+task: Failed to parse Taskfile
+```
+
+**Cause:**
+- Syntax errors in your Taskfile, such as invalid YAML or wrong schema version.
+
+**Solution:**
+1. Validate your Taskfile YAML syntax with online tools or:
+   ```bash
+   yamllint Taskfile.yml
+   ```
+2. Confirm your Taskfile version is set correctly (e.g., `version: '3'`).
+3. Check for trailing spaces, tabs instead of spaces, or incorrect indentation.
+4. Use `task --dry` to validate tasks without execution:
+   ```bash
+   task --dry
+   ```
+
+---
+
+### 1.3 Remote Taskfile Download or Trust Issues (Exit Codes 103-106)
+**Symptoms:**
+- Task fails when including remote Taskfiles.
+- Errors relate to downloading, checksum verification, or trust failures.
+
+**Cause:**
+- Network connectivity problems.
+- Remote Taskfile checksum mismatch or security policy blocks.
+- Offline mode without cached remote Taskfile.
+
+**Solution:**
+1. Verify network access to the remote Taskfile URL.
+2. Ensure the checksum in your includes configuration matches the remote file.
+3. Confirm you're not running in offline mode accidentally.
+4. Review your security settings if Task refuses untrusted remote Taskfiles.
+
+---
+
+### 1.4 Task Not Found (Exit Code 200)
+**Symptoms:**
+- Running a task name that does not exist in the Taskfile.
+- CLI error:
+  ```
+task: Task not found: build
+```
+
+**Cause:**
+- Typo in the task name.
+- Task is internal (not callable directly).
+- Task is included under a namespace, and you forgot to prefix it.
+
+**Solution:**
+1. List all available tasks with:
+   ```bash
+   task --list
+   ```
+2. Verify the exact name or alias of the task.
+3. If task is namespaced, run it qualified, e.g., `task included:build`.
+4. Check if the task is marked `internal: true` in the Taskfile (internal tasks cannot be called directly).
+
+---
+
+### 1.5 Missing Required Variables (Exit Code 206) or Invalid Variable Values (Exit Code 207)
+**Symptoms:**
+- Task complains about missing variables or invalid values.
+- Example error:
+  ```
+task: Missing required variables: IMAGE_NAME
+```
+
+**Cause:**
+- Variables required by the task were not provided.
+- Variable values do not match enumerated allowed values.
+
+**Solution:**
+1. Check task documentation or `requires.vars` declaration in your Taskfile.
+2. Pass required variables explicitly when running the task:
+   ```bash
+   task build IMAGE_NAME=myapp IMAGE_TAG=v1.0
+   ```
+3. Export variables as environment variables:
+   ```bash
+   export IMAGE_NAME=myapp
+   export IMAGE_TAG=v1.0
+   task build
+   ```
+4. Validate that variable values are in the allowed set if using `enum` constraints.
+
+---
+
+### 1.6 Dotenv File Parsing Error
+**Symptoms:**
+- Error messages related to `.env` file parsing.
+- Causes task execution to fail prematurely.
+
+**Cause:**
+- Syntax errors in the `.env` file, such as missing `=` or invalid characters.
+
+**Solution:**
+1. Inspect each `.env` file referenced by your Taskfile under `dotenv:` section.
+2. Fix formatting issues, ensure each line follows `KEY=VALUE`.
+3. Avoid quoting values with forbidden characters or invalid multilines unless supported.
+4. Use a dotenv validator if available.
+
+---
+
+## 2. Verification and Debugging Steps
+
+If you encounter issues not resolved above, follow these steps:
+
+### Step 1: Confirm Installation
+```bash
+task --version
+```
+Output should be the installed Task CLI version. If not, re-install following official instructions.
+
+### Step 2: Validate Taskfile Syntax
+```bash
+task --dry
+```
+This compiles tasks without running them and will report any syntax errors.
+
+### Step 3: List Available Tasks
+```bash
+task --list
+```
+Verify the tasks defined match your expectations.
+
+### Step 4: Run with Verbose Logging
+```bash
+task build --verbose
+```
+Verbose mode prints detailed execution info to help diagnose failures.
+
+### Step 5: Isolate Environment
+Try running tasks in a clean shell environment to rule out interfering environment variables or shell settings.
+
+---
+
+## 3. Additional Tips and Best Practices
+
+- **Taskfile Location:** Use the `--taskfile` and `--dir` flags to control where Task looks for your Taskfile.
+- **Environment Variables:** Remember variables can be passed via environment, CLI args, or Taskfile vars.
+- **Use `--force`:** To bypass up-to-date checks and force task execution if you suspect caching issues.
+- **Check Platform Restrictions:** Some tasks or commands may be platform-specific and skipped silently.
+- **Watch Mode:** Avoid using watch mode for initial troubleshooting as it can obscure errors.
+
+---
+
+## 4. Troubleshooting Example: Missing Taskfile
+
+1. Verify you are in the directory where your Taskfile.yml is located.
+2. Run:
+   ```bash
+   ls
+   ```
+   Confirm that `Taskfile.yml` (or one of the valid names) is visible.
+3. If missing, create one:
+   ```bash
+   task --init
+   ```
+4. Try running your task again.
+
+---
+
+## 5. Troubleshooting Example: Invalid Taskfile
+
+1. Validate YAML:
+   ```bash
+   yamllint Taskfile.yml
+   ```
+2. Look for errors in indentation or data types.
+3. If you edited the Taskfile recently, revert to a stable version.
+4. Use `task --dry` to check the Taskfile without executing commands.
+
+---
+
+## 6. Where to Get Help
+
+- Check the [Command Line Interface Reference](./cli.md) for detailed exit codes and options.
+- Visit the GitHub repository Issues page: [https://github.com/clidey/task/issues](https://github.com/clidey/task/issues)
+- Consult related docs:
+  - [Installing Task](../../getting-started/prerequisites-installation/installing-task.md)
+  - [Setting Up Your First Taskfile](../../getting-started/initial-setup/setup-taskfile.md)
+  - [Running Your First Task](../../getting-started/first-usage-validation/first-run.md)
+
+<Tip>
+Use `task --help` and `task --list` often during setup—these commands provide immediate insight into what Task detects and how it expects tasks to be run.
+</Tip>
+
+---
+
+## 7. Summary
+This page covered how to identify and resolve frequent setup problems when installing and configuring Task, including missing or invalid Taskfiles, remote download errors, missing variables, and dotenv parsing issues. It provides practical verification commands, debugging advice, and pointers to related guides and support resources.
+
+---
+
+## 8. Quick Reference Table
+
+| Problem                       | Exit Code | Key Action                                   |
+|-------------------------------|-----------|----------------------------------------------|
+| No Taskfile found             | 100       | Create or point to a valid Taskfile          |
+| Invalid or unparseable Taskfile| 102       | Fix Taskfile YAML/syntax errors               |
+| Remote includes issues        | 103-106   | Check network, checksum, and trust settings  |
+| Task not found               | 200       | Correct task name; check namespaces & internal|
+| Missing required variables    | 206       | Provide required variables                     |
+| Incorrect variable values    | 207       | Use allowed variable values                    |
+
+---
+
+## 9. Example: Forcing Task Execution to Bypass Stale Cache
+
+If a task does not execute because it is considered up-to-date, use:
+
+```bash
+task build --force
+```
+
+This forces the task to run regardless of fingerprinting or status checks.
+
+
+---
+
+<a href="/getting-started/prerequisites-installation/installing-task">Installing Task guide</a> | <a href="/getting-started/initial-setup/setup-taskfile">Setup Your First Taskfile</a> | <a href="/getting-started/first-usage-validation/first-run">Running Your First Task</a> | <a href="/reference/cli">Task CLI Reference</a>

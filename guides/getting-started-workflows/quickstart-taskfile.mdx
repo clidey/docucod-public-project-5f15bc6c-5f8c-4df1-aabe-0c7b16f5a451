@@ -1,0 +1,218 @@
+---
+title: "Your First Taskfile: Quickstart"
+description: "Create your first Taskfile from scratch and run your initial tasks. This guide will walk you through writing a simple Taskfile, defining tasks, and executing them from the command line, ensuring you get productive with Task in minutes."
+---
+
+# Your First Taskfile: Quickstart
+
+Welcome to your first step in automating your projects with Task! This guide will walk you through creating a simple Taskfile from scratch, defining your first tasks, and executing them on the command line. By the end, you'll have a working Taskfile that prints a message and builds a simple Go program.
+
+---
+
+## 1. Overview
+
+### What you will accomplish
+- Create a new Taskfile using Task's built-in initialization
+- Understand the basic structure of a Taskfile written in YAML
+- Define simple tasks with commands
+- Run your tasks via the command line
+
+### Prerequisites
+- Task installed on your computer (see [Installing Task](getting-started/prerequisites-installation/installing-task))
+- Basic familiarity with command line operations
+- Optionally, Go programming environment for the build example (or adjust commands for your own tools)
+
+### Expected Outcome
+You will have a `Taskfile.yml` in your project directory defining a default greeting task and a build task. You will be able to run these tasks simply by typing `task` or `task build`.
+
+### Time Estimate
+5-10 minutes
+
+### Difficulty Level
+Beginner
+
+---
+
+## 2. Creating Your First Taskfile
+
+To get started, open your terminal and navigate to the root directory of your project. Run the following command:
+
+```shell
+ task --init
+```
+
+This command generates a basic `Taskfile.yml` with a starter template.
+
+If you want to specify a different file name or directory, you can do so:
+
+```shell
+# Specify directory
+ task --init ./subdirectory
+
+# Specify file name
+ task --init Custom.yml
+```
+
+### Sample `Taskfile.yml` created by `--init`:
+
+```yaml
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+```
+
+#### Explanation
+- `version: '3'` specifies the Taskfile schema version to ensure compatibility.
+- `vars` declares global variables available to all tasks; here, `GREETING` holds a welcome message.
+- `tasks` defines the automation jobs.
+- The `default` task prints out the `GREETING` variable.
+- The `silent: true` option suppresses command echoing to keep the output clean.
+
+---
+
+## 3. Running Your First Task
+
+Execute the default task by simply typing:
+
+```shell
+ task
+```
+
+Or explicitly specify the task name:
+
+```shell
+ task default
+```
+
+You should see:
+
+```shell
+Hello, World!
+```
+
+### Running a Taskfile in another directory or with a different name
+
+If your Taskfile is in a different directory or named differently, use the flags:
+
+```shell
+# Run from a different directory
+ task --dir ./subdirectory
+
+# Run with different Taskfile name
+ task --taskfile Custom.yml
+```
+
+---
+
+## 4. Adding a Build Task
+
+Let's add a new task to compile a Go program. Add the following below your `default` task in `Taskfile.yml`:
+
+```yaml
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  build:
+    cmds:
+      - go build ./cmd/main.go
+```
+
+This task named `build` runs the command to build a Go program from source.
+
+### Running the build task
+
+Invoke:
+
+```shell
+ task build
+```
+
+If your Go environment is correctly set up and the path to main.go is valid, the program will build.
+
+---
+
+## 5. What Happens Behind the Scenes?
+
+- Task automatically looks for the `Taskfile.yml` in the current directory.
+- Variables declared in `vars` can be interpolated within commands using `{{.VAR_NAME}}` syntax.
+- Tasks consist of lists of commands executed sequentially.
+- Using `silent: true` suppresses command echo, showing only output.
+
+---
+
+## 6. Best Practices & Tips
+
+- Keep `Taskfile.yml` version 3 for compatibility with current Task features.
+- Use variables in `vars` to avoid hardcoding strings and support easy updates.
+- Use the `default` task for the most common command you want to run without typing extra arguments.
+- For large projects, consider modularizing with includes (see [Including Other Taskfiles](/docs/guide#including-other-taskfiles)).
+- Use `--list` or `-l` to see available tasks:
+
+```bash
+ task --list
+```
+
+- Use `--silent` or silent mode sparingly to keep visibility into your task execution.
+
+---
+
+## 7. Troubleshooting
+
+- **Taskfile not found:** Confirm you are in the directory containing `Taskfile.yml`. Use `task --dir` if needed.
+- **Command not found in build:** Make sure `go` is installed and accessible via your system PATH.
+- **YAML file syntax errors:** YAML files are indentation sensitive. Use a validator if errors are detected.
+- **Silent task produces no output:** Disable silent mode temporarily to debug.
+
+If you encounter issues, consult the [Troubleshooting Setup Issues](getting-started/first-usage-validation/troubleshooting-setup) guide.
+
+---
+
+## 8. Next Steps
+
+After mastering this quickstart, explore these guides to deepen your automation skills:
+
+- [Common Developer Workflows with Task](/guides/getting-started-workflows/typical-workflows): Handling typical build chains and workflow examples.
+- [Designing Clean and Maintainable Taskfiles](/guides/getting-started-workflows/taskfile-structure-best-practices): Improve structure for larger projects.
+- [Variables and Environment Management](/guides/advanced-features-patterns/variables-envs): Get advanced with variable handling.
+- [Managing Dependencies and Includes](/guides/advanced-features-patterns/task-dependencies-includes): Modularize your Taskfile.
+
+---
+
+## 9. Reference Material
+
+- Official Taskfile schema (version 3): [Taskfile Schema Reference](/reference/schema)
+- Task CLI options and flags: [Command Line Interface Reference](/reference/cli)
+- Templating system: [Templating Reference](/reference/templating)
+
+---
+
+Congratulations on writing and running your first Taskfile! You're now ready to harness the power of Task for streamlined, repeatable automation.
+
+---
+
+<Check>
+Ensure your Taskfile works by running:
+```bash
+task
+```
+You should see your greeting printed.
+Then run:
+```bash
+task build
+```
+to run your build task.
+</Check>
+
+---
+
+*This guide strictly covers creating and running Taskfiles in its simplest form. For advanced usage, refer to the linked guides and reference pages.*

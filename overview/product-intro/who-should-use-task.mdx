@@ -1,0 +1,77 @@
+---
+title: "Who Should Use Task?"
+description: "Task is ideal for developers, DevOps engineers, and software teams who want to automate their project builds, common scripts, and recurring command-line processes. Whether you're managing simple app builds or complex multi-step flows, Task helps turn shell commands into organized, reusable tasks. Understand the common scenarios, workflows, and user needs Task addresses."
+---
+
+# Who Should Use Task?
+
+Task is designed for developers, DevOps engineers, and software teams seeking to automate project builds, script common operations, and manage recurring command-line tasks efficiently. Whether your workflows are simple or involve complex multi-step procedures, Task transforms shell commands into well-organized, reusable tasks that save time and reduce manual effort.
+
+## Understanding the Users and Use Cases
+
+### Ideal Users
+- **Developers** who want a straightforward way to build, test, and deploy code without relying on heavyweight tools.
+- **DevOps engineers** managing infrastructure and automation scripts across environments.
+- **Software teams** aiming to standardize project scripts and reuse automation definitions across multiple developers and machines.
+
+### Key Scenarios Where Task Excels
+- **Automating project builds:** Compile, package, and prepare application builds consistently, no matter how simple or intricate.
+- **Managing common scripts:** Run repetitive commands like linting, formatting, or database migrations with one unified interface.
+- **Orchestrating multi-step flows:** Chain tasks, manage dependencies, and coordinate complex workflows involving multiple commands and sub-tasks.
+- **Cross-platform script execution:** Write tasks once and run them seamlessly across different operating systems and architectures.
+
+## What Does This Mean for You?
+If you've ever found yourself copying shell scripts, juggling multiple CLI commands, or manually running long command sequences, Task brings clarity and efficiency by centralizing this into a declarative Taskfile.
+
+- **Turn scattered commands into organized tasks:** Create modular, readable task definitions to avoid scattered one-off scripts.
+- **Enable easy sharing and common standards:** Your team shares the same Taskfiles, reducing onboarding friction and mistakes.
+- **Reduce cognitive load:** Focus on what needs to be done, not on remembering or typing commands.
+
+## Real-World User Workflows
+Consider a developer working on a microservice repository. They can `cd` into any service directory and run `task build` or `task test` without setting up separate build tools or shell scripts for each service. With Task understanding directory contexts and dependencies, this developer gains a reliable, uniform experience.
+
+A DevOps engineer might automate deployments, infrastructure setup, or data migrations by coding these commands as Task tasks. These scripts can be version-controlled and reused across projects or environments.
+
+## Practical Tips
+- Start small: Define essential tasks like `build`, `test`, or `deploy` first.
+- Modularize with includes: Share common tasks across projects by including other Taskfiles.
+- Use environment variables and variables features to make tasks configurable and adaptable.
+- Leverage platform-specific tasks to handle OS differences smoothly without clutter.
+
+## Common Pitfalls to Avoid
+- Don’t keep long, brittle shell scripts scattered across your repo.
+- Avoid duplicating command logic—prefer calling subtasks and leveraging dependencies.
+- Ensure all required environment variables or prerequisites are defined to avoid silent failures.
+
+---
+
+For a foundational understanding of what Task is and its core features, see [What is Task?](overview/product-intro/what-is-task).
+
+To start automating with Task right away, consider visiting the [Getting Started](getting-started.md) guide.
+
+Explore real-world workflows and best practices in the [Guides](guides/getting-started-workflows/typical-workflows) section.
+
+---
+
+### Example
+Here's a simple example of using Task to automate a Docker Compose setup in a microservice directory:
+
+```yaml
+version: '3'
+tasks:
+  up:
+    dir: '{{.USER_WORKING_DIR}}'
+    preconditions:
+      - test -f docker-compose.yml
+    cmds:
+      - docker-compose up -d
+```
+
+In this scenario, regardless of which service directory you navigate into, running `task up` will lift the Docker stack as long as the `docker-compose.yml` file exists there.
+
+---
+
+This page is your gateway to recognizing if Task matches your automation needs, helping you understand how it complements workflows and streamlines command execution.
+
+
+---

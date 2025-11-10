@@ -1,0 +1,203 @@
+---
+title: "Setting Up Your First Taskfile"
+description: "Discover how to create and structure a basic Taskfile to define your project automation workflows. Includes a guided walkthrough for writing your first simple task, with tips on syntax and best practices."
+---
+
+# Setting Up Your First Taskfile
+
+Discover how to create and structure a basic Taskfile to define your project automation workflows. This guide walks you through writing your first simple task, with helpful tips on syntax and best practices.
+
+---
+
+## What is a Taskfile?
+
+A Taskfile is the cornerstone of Task's automation system. It is a YAML-formatted file that describes tasks — units of work you want to automate — along with variables, dependencies, and execution context.
+
+Each Taskfile begins with a version declaration and contains one or more tasks under the `tasks:` key. Tasks are defined declaratively with commands (`cmds`), dependencies (`deps`), and other key attributes.
+
+---
+
+## Creating a Basic Taskfile
+
+To get started, create a new file named `Taskfile.yml` in the root of your project directory.
+
+Here's the minimal structure of a simple Taskfile:
+
+```yaml
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - echo "Hello, World!"
+```
+
+- `version: '3'` declares the schema version used.
+- Under `tasks:`, a task named `default` is declared.
+- The `default` task has a `cmds` list containing a single command to print "Hello, World!".
+
+---
+
+## Writing Your First Task
+
+Let’s step through writing your first meaningful task.
+
+### Step 1: Define a Task Name
+
+Pick a simple name for your task. The `default` task is special because it runs when no task name is specified.
+
+```yaml
+tasks:
+  default:
+```
+
+### Step 2: Add Commands
+
+Define the commands your task should run with the `cmds` key, which accepts a list of commands:
+
+```yaml
+cmds:
+  - echo "Hello from Task!"
+```
+
+Commands are executed sequentially. You can add as many as needed:
+
+```yaml
+cmds:
+  - echo "Step 1"
+  - echo "Step 2"
+```
+
+### Step 3: Add Optional Attributes
+
+You can enhance tasks with these common options:
+
+- `desc`: A description for the task.
+- `silent`: If true, suppresses echoes of command lines during execution.
+- `env`: Per-task environment variables.
+- `vars`: Variables scoped only to this task.
+- `deps`: Dependencies that run before this task.
+
+Example:
+
+```yaml
+tasks:
+  greet:
+    desc: "Print a greeting message"
+    vars:
+      NAME: World
+    cmds:
+      - echo "Hello, {{.NAME}}!"
+    silent: true
+```
+
+This task prints a greeting using templated variables.
+
+---
+
+## Using Short Task Syntax
+
+If your task only runs a single command and uses no other options, you can write it in short form:
+
+```yaml
+tasks:
+  build: go build -v ./...
+```
+
+This defines a `build` task that runs the Go build command directly.
+
+---
+
+## Running Your Taskfile
+
+Once your Taskfile is ready, run a task with:
+
+```shell
+task <task-name>
+```
+
+For the `default` task, you can simply run:
+
+```shell
+task
+```
+
+If your task file isn’t named `Taskfile.yml` or is in a different directory, use the `--taskfile` and `--dir` flags respectively.
+
+---
+
+## Taskfile Syntax Tips and Best Practices
+
+- **Task Names:** Use simple, descriptive, and lowercase names separated by hyphens or colons for namespaces.
+- **Indentation:** YAML is indentation-sensitive. Use two spaces per level; avoid tabs.
+- **Quoting:** Wrap strings containing special characters or interpolations in double quotes.
+- **Variables:** Use `{{.VAR_NAME}}` syntax for templating variables inside command strings.
+- **Silent Mode:** Use `silent: true` to keep command output clean when commands don’t need to be echoed.
+- **Dependencies:** Use `deps` to declare tasks that must run before the current task.
+
+---
+
+## Example: Build and Test
+
+A typical Go project might have build and test tasks:
+
+```yaml
+version: '3'
+
+tasks:
+  build:
+    desc: "Compile the project"
+    cmds:
+      - go build -v ./...
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - go test -v ./...
+    deps: [build]
+```
+
+Running `task test` will first run the `build` task then execute the tests.
+
+---
+
+## Common Pitfalls
+
+<Tip>
+- Forgetting to specify `cmds:` for multi-command tasks leads to parsing errors.
+- Mixing tabs and spaces in YAML breaks loading.
+- Not quoting strings with interpolation causes errors.
+- Be mindful when using the special `default` task name.
+</Tip>
+
+<Warning>
+Incorrect indentation or missing dashes in `cmds` lists is a common cause of Taskfile errors.
+Verify that lists start with `-` and are indented properly.
+</Warning>
+
+<Note>
+Taskfiles use [mvdan/sh](https://github.com/mvdan/sh) for command execution, so shell commands must be compatible with POSIX sh syntax.
+</Note>
+
+---
+
+## Next Steps
+
+- Explore adding variables and environment management to your Taskfile.
+- Learn about dependencies and how to orchestrate tasks efficiently.
+- Review the [Guide](https://taskfile.dev/docs/guide) for deeper understanding.
+
+---
+
+## Related Documentation
+
+- [Getting Started Guide](https://taskfile.dev/docs/getting-started)
+- [Taskfile Syntax Reference](https://taskfile.dev/docs/reference/schema)
+- [Guide to Task Dependencies and Includes](https://taskfile.dev/docs/guide#task-dependencies)
+- [Variables and Environment Handling](https://taskfile.dev/docs/guide#variables)
+
+---
+
+By mastering your first Taskfile, you unlock powerful automation to streamline your workflows, saving time and effort.
+
+Happy automating!

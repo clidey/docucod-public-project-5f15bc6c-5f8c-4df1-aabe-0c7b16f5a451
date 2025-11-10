@@ -1,0 +1,158 @@
+---
+title: "Upgrade Guides"
+description: "Step-by-step guides for safely upgrading across multiple Task versions, including strategies to test and verify complex workflows before and after migration."
+---
+
+# Upgrade Guides
+
+Step-by-step guides for safely upgrading across multiple Task versions, including strategies to test and verify complex workflows before and after migration.
+
+---
+
+## Introduction
+
+Upgrading Task across versions can introduce breaking changes or deprecated functionality that may impact your existing Taskfiles and automation workflows. This guide provides actionable, user-focused strategies to help you navigate upgrades confidently, minimize disruption, and validate your automation pipelines after changes.
+
+Each section targets a different upgrade scenario with practical steps, tips, and common pitfalls to avoid.
+
+---
+
+## 1. Preparing for an Upgrade
+
+### Understand the Scope of Changes
+
+Before upgrading, review the [Changelog](https://taskfile.dev/changelog) and [Deprecations](https://taskfile.dev/deprecations) pages relevant to your current and target versions. Focus on:
+
+- Breaking changes and migration instructions.
+- Features that are deprecated or removed.
+- New experimental features that may affect your workflows.
+
+This upfront research helps identify potential areas where your Taskfiles might need adjustments.
+
+### Validate Your Current Setup
+
+Run your automation tasks using your current Task version with increased verbosity (using `-v` or `--verbose`) to log task invocations, variable resolution, and outputs. This establishes a baseline for behavior.
+
+> <Tip>
+> Strongly consider using continuous integration (CI) pipelines or isolated testing environments to execute your Taskfiles before upgrading in production.
+> </Tip>
+
+### Backup Your Taskfiles and Environment
+
+Keep a copy of your current Taskfiles, configuration files (`.taskrc.yml`), and any custom scripts you invoke before beginning the upgrade process.
+
+---
+
+## 2. Incremental Upgrade Workflow
+
+When upgrading multiple versions, avoid skipping major releases where breaking changes occur. Instead, upgrade stepwise through major versions (e.g., from 3.32 to 3.33, then 3.33 to 3.34).
+
+This reduces troubleshooting complexity and enables isolated problem identification.
+
+### Step-by-Step
+
+1. **Read the release notes** for the target minor or major version.
+2. **Upgrade Task CLI or library** to the target version.
+3. **Run your existing Taskfile with the upgraded Task version**.
+4. **Test all critical tasks**, focusing on those using deprecated features or that are platform-specific.
+5. **Update Taskfiles to address deprecations or breaking changes**.
+6. **Re-run your tasks and CI pipelines** to validate correctness.
+
+Repeat for each version jump until you reach your desired version.
+
+---
+
+## 3. Handling Schema Version Upgrades (Version 2 to 3 Example)
+
+The move from Taskfile schema version 2 to 3 is a common upgrade path with important considerations.
+
+### Key Points
+
+- Version 2 schema support was removed in Task v3.34.0.
+- Taskfiles must be converted to the version 3 schema format to work.
+
+### Upgrade Steps
+
+1. Identify any Taskfiles using `version: '2'`.
+2. Use the latest [Task v3 release notes](https://taskfile.dev/changelog/#v3340---2024-01-25) and [version 2 schema deprecation guide](https://taskfile.dev/deprecations/version-2-schema) to understand required changes.
+3. Convert Taskfiles to use `version: '3'` and update syntax according to the new schema.
+4. Test the converted Taskfiles in a staging environment.
+5. Deploy the converted Taskfiles with the new Task binary.
+
+> <Warning>
+> Running newer Task versions with version 2 Taskfiles will result in errors. Consider automation validation to catch these early.
+> </Warning>
+
+---
+
+## 4. Testing and Verification After Upgrade
+
+Ensuring your automation tasks behave as expected after upgrading is critical.
+
+### Testing Strategies
+
+- **Use the `--dry` mode** to compile and preview tasks execution plans without running commands.
+- **Add verbose logging** to trace the flow of tasks and variable substitutions.
+- **Run full test suites or simulations** of your tasks if applicable.
+- **Compare outputs and generated files** against previous versions.
+- **Leverage environment isolation** (e.g., containers, VM snapshots) to detect side effects.
+
+### Common Pitfalls to Watch For
+
+- Tasks silently skipping execution due to changed up-to-date detection.
+- Changes in environment variable precedence affecting commands.
+- Deprecated task properties causing silent failures or warnings.
+- Platform-specific commands or filtering behaving differently.
+
+---
+
+## 5. Advanced Upgrade Considerations
+
+### Managing Experiments and Feature Flags
+
+Some breaking changes are introduced behind experimental flags in minor releases. Consider:
+
+- Opting-in to experiments gradually.
+- Following guidance on [Feature Flags and Experimental Features](https://taskfile.dev/concepts/integration-extensions/feature-flags-and-experiments).
+- Using `.taskrc.yml` configuration to enable or disable these safely.
+
+### Upgrading Package API Users
+
+If you depend on Task as a Go package, pay close attention to the [Package API Reference](https://taskfile.dev/reference/package) and related changelogs, since API stability is evolving. Pin your `go.mod` versions accordingly.
+
+---
+
+## 6. Rollback and Troubleshooting
+
+If issues arise after upgrading:
+
+- Roll back to the previous working Task version and Taskfile state.
+- Review verbose logs for error clues.
+- Verify that Taskfile syntax matches the version in use.
+- Check for any reported bugs or regressions in release notes or issues.
+
+For further help, consult the [Troubleshooting Setup Issues](https://taskfile.dev/getting-started/first-usage-validation/troubleshooting-setup) page.
+
+---
+
+## Summary
+
+Upgrading Task requires careful review of breaking changes, testing, and iteration. Following a disciplined, user-centric upgrade approach empowers you to maintain reliable automation across versions.
+
+Make use of official changelogs, deprecations, and experiments documentation to stay informed and plan accordingly.
+
+**You can always reach out to the community and maintainers through GitHub Discussions and Discord for guidance.**
+
+---
+
+## Additional Resources
+
+- [Changelog and Release Notes](https://taskfile.dev/changelog)
+- [Deprecations and Migration Guides](https://taskfile.dev/deprecations)
+- [Feature Flags and Experiments](https://taskfile.dev/concepts/integration-extensions/feature-flags-and-experiments)
+- [Package API Reference](https://taskfile.dev/reference/package)
+- [Troubleshooting Setup Issues](https://taskfile.dev/getting-started/first-usage-validation/troubleshooting-setup)
+- [Taskfile Schema Versions and Migration](https://taskfile.dev/deprecations/version-2-schema)
+- Navigation: [Changelog > Compatibility and Migration > Upgrade Guides](https://taskfile.dev/changelog/compatibility-changes/upgrade-guides)
+
+---

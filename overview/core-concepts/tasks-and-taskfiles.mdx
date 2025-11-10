@@ -1,0 +1,309 @@
+---
+title: "Tasks and the Taskfile"
+description: "Tasks are the atomic units of work in Task, defined in a declarative YAML file called the Taskfile. Understand how tasks are structured, how the Taskfile orchestrates commands, and why this approach provides clarity, portability, and maintainability for your automation needs."
+---
+
+# Tasks and the Taskfile
+
+Tasks are the core units of work in Task, the powerful automation tool that streamlines your build and automation workflows. Defined declaratively, tasks encapsulate commands, dependencies, and conditions, all orchestrated through a central YAML file named the **Taskfile**. This page dives into how tasks are structured, how the Taskfile brings clarity and maintainability, and why this design empowers you to automate complex workflows with ease.
+
+---
+
+## Understanding Tasks: The Atomic Unit of Automation
+
+At its heart, a **task** is a named job you want to run repeatedly — from compiling code and running tests to deploying applications or cleaning up artifacts. Tasks are encapsulated sets of one or more shell commands or calls to other tasks, with optional metadata to control when and how the task runs.
+
+When you author automation with Task, you express these tasks inside the `tasks` section of a **Taskfile.yml** (or another supported Taskfile name). This YAML file is the single source of truth defining your project’s automation, written in a clean, readable format.
+
+### Why Tasks Matter
+
+- **Atomicity**: Each task focuses on one goal or step in your workflow.
+- **Composability**: Tasks can depend on other tasks, allowing complex workflows to be built by combining simple pieces.
+- **Configurability**: With declarative properties, you control execution order, environment, conditions, and outputs.
+- **Portability**: Because tasks are defined in a structured YAML Taskfile without platform-specific scripts, your build automation is shareable and consistent across environments.
+
+## The Taskfile: Your Automation Blueprint
+
+The Taskfile is the declarative YAML file where all your tasks live. It orchestrates the commands, dependencies, environment variables, and execution policies of your automation pipeline.
+
+The Taskfile is structured around:
+
+- **Version**: Taskfile schema version (usually version 3), enabling new features and compatibility.
+- **Global Options**: Taskfile-wide settings such as `method` for up-to-date checks, output formatting, and environment variables.
+- **Variables and Environment (`vars` and `env`)**: Globals accessible by all tasks, supporting static values, dynamic shell commands, maps, and references.
+- **Tasks**: The core work units, defined with flexible syntax supporting simple commands, arrays of commands, or detailed objects with multiple properties.
+- **Includes**: Modularize your Taskfiles by including and namespacing other Taskfiles.
+
+### Clarity through Declarative Structure
+
+Instead of mixing imperative scripts with complex logic, the Taskfile leverages structured YAML, ensuring your automation is:
+
+- **Clear**: Everyone on your team can read and understand the workflow.
+- **Portable**: Run consistently on any supported platform.
+- **Maintainable**: Easily extend or modify by adding, removing, or updating task definitions.
+
+## Core Task Structure and Properties
+
+Each task offers a rich set of options to precisely control your automation. Below is a breakdown of the key properties you will commonly use:
+
+| Property      | Type                      | Description |
+|---------------|---------------------------|-------------|
+| `cmd` / `cmds`| String or array of strings| The shell commands or other tasks to execute.
+| `deps`        | Array of tasks or calls   | Dependencies that run before the task.
+| `desc`        | String                    | Short description shown in `task --list`.
+| `summary`     | String                    | Detailed multi-line description.
+| `dirs`        | String                    | Directory where commands run (auto-created if missing).
+| `vars` / `env`| Variable mappings         | Variables and environment overrides.
+| `prompt`      | String or array           | Confirmation prompts shown before running.
+| `aliases`     | Array of strings          | Alternative names for the task.
+| `sources`     | Array of files/globs      | Files monitored for changes (fingerprinting).
+| `generates`   | Array of files/globs      | Files created by the task.
+| `watch`       | Boolean                   | Automatically re-run task on file changes.
+| `method`      | String (checksum/timestamp/none) | Controls when the task runs based on fingerprint.
+| `run`         | String (always/once/when_changed) | Control how often a task runs.
+| `silent`      | Boolean                   | Suppress echo of commands.
+| `internal`    | Boolean                   | Hides the task from CLI list and direct execution.
+| `interactive` | Boolean                   | Enables interactive input mode.
+
+### Example: Minimal and Fully Featured Tasks
+
+```yaml
+version: '3'
+
+# Simple task with a command
+tasks:
+  hello:
+    cmd: echo "Hello, World!"
+
+# Task with dependencies, variables, and descriptions
+  build:
+    desc: Build the binary
+    deps: [clean, setup]
+    vars:
+      BUILD_FLAGS: "-v"
+    cmds:
+      - go build {{.BUILD_FLAGS}} -o app ./...
+
+  clean:
+    cmds:
+      - rm -rf ./app
+
+  setup:
+    cmds:
+      - echo "Setting up environment"
+```
+
+This example shows how to start simple and extend as your automation demands grow.
+
+## Defining Tasks: Syntax Variants
+
+Taskfiles support multiple ways to express tasks for convenience and clarity.
+
+### 1. String Format
+
+For one-liner tasks, define a task directly as a string:
+
+```yaml
+tasks:
+  greet: echo "Hello, everyone!"
+```
+
+### 2. Array of Commands
+
+To run multiple commands sequentially:
+
+```yaml
+tasks:
+  build:
+    - go mod tidy
+    - go build ./...
+```
+
+### 3. Full Object Format
+
+The richest form supports all options:
+
+```yaml
+tasks:
+  deploy:
+    desc: Deploy the application
+    vars:
+      ENV: production
+    deps:
+      - build
+      - test
+    cmds:
+      - ./deploy.sh --env={{.ENV}}
+    prompt: Are you sure you want to deploy to production?
+    silent: false
+    watch: false
+```
+
+## Task Dependencies and Orchestration
+
+One of Task's strengths is orchestrating tasks through dependencies (`deps`).
+
+- Dependencies run *before* their dependent task.
+- They execute in *parallel* by default for speed.
+- You can pass variables and options to dependencies.
+- To enforce serial execution, invoke dependent tasks explicitly in `cmds`.
+
+### Example:
+
+```yaml
+tasks:
+  all:
+    deps: [lint, test, build]
+
+  lint:
+    cmds:
+      - golangci-lint run
+
+  test:
+    cmds:
+      - go test ./...
+
+  build:
+    cmds:
+      - go build ./...
+```
+
+If you need serial execution:
+
+```yaml
+tasks:
+  pipeline:
+    cmds:
+      - task: lint
+      - task: test
+      - task: build
+```
+
+## Variables and Environment in Tasks
+
+Variables (`vars`) and environment variables (`env`) let you parameterize tasks:
+
+- `vars` are used primarily for templating inside commands.
+- `env` sets environment variables available to commands.
+- Both can be static values, shell commands (`sh:`), references, or maps.
+- Variables can be overriden on the CLI or within included Taskfiles.
+
+### Example:
+
+```yaml
+vars:
+  VERSION: '1.0.0'
+env:
+  NODE_ENV: production
+
+tasks:
+  build:
+    env:
+      API_KEY:
+        sh: echo $API_SECRET
+    cmds:
+      - echo "Building version {{.VERSION}} with NODE_ENV=$NODE_ENV"
+```
+
+## Including Other Taskfiles: Modular Automation
+
+Your Taskfile can include other Taskfiles using the `includes` property. This
+modularity allows organizing large or shared automation tasks into namespaces.
+
+Included Taskfiles:
+
+- Are loaded relative to the including Taskfile.
+- Can be marked *optional*, *flattened* (merge tasks without namespace), or *internal*.
+- Can have namespace aliases for easier command usage.
+- Support passing variables to specialize included Taskfiles.
+
+### Example:
+
+```yaml
+includes:
+  common: ./common-tasks
+  docker:
+    taskfile: ./docker/Taskfile.yml
+    dir: ./docker
+    aliases: [dk]
+
+
+tasks:
+  up:
+    cmds:
+      - task: common:clean
+      - task: docker:build
+```
+
+You can then call `task clean` or `task dk:build`.
+
+## Summary
+
+Tasks form the fundamental units of automation in Task. Through the **Taskfile** — a declarative YAML file — you express these tasks clearly and portably.
+
+This structure empowers you to:
+
+- Define single or multiple command tasks with dependencies.
+- Control execution order, up-to-date checks via fingerprinting, platform restrictions, and watch mode.
+- Pass variables and environments to fine-tune each task.
+- Modularize and reuse task definitions across projects via included Taskfiles and namespaces.
+
+By mastering tasks and the Taskfile structure, you unlock robust, maintainable, and scalable automation for your software projects.
+
+---
+
+## Practical Tips for Success
+
+- **Start simple:** Use string or array syntax for early tasks, then migrate to full objects as needs grow.
+- **Leverage dependencies:** Keep tasks focused and orchestrate workflows through `deps`.
+- **Use variables wisely:** Make your tasks configurable through `vars` and `env`.
+- **Modularize:** Use `includes` to organize tasks across components or teams.
+- **Use `run`, `method`, and `status` to optimize execution:** Prevent unnecessary work and speed up your pipeline.
+
+## Troubleshooting Common Taskfile Issues
+
+<AccordionGroup title="Common Taskfile Issues and Solutions">
+<Accordion title="Task Not Found or Ambiguous Aliases">
+If you receive a 'Task not found' or 'Task alias conflict' error:
+
+- Ensure the task name matches exactly.
+- Check for duplicate aliases and resolve naming conflicts.
+- Use fully qualified names `namespace:task` when including tasks.
+</Accordion>
+<Accordion title="Syntax Errors and Parsing Failures">
+- Validate your Taskfile YAML syntax.
+- Use automated tools or editors with YAML support.
+- Review error messages carefully; they often pin down the problematic lines.
+</Accordion>
+<Accordion title="Variables Not Resolving Correctly">
+- Check the order of variable declarations.
+- Use `ref` for non-string variables to avoid templating issues.
+- Verify dynamic commands under `sh:` have correct shell syntax.
+</Accordion>
+<Accordion title="Included Taskfile Loading Failures">
+- Verify the relative paths of included Taskfiles.
+- Use `optional: true` to avoid errors if includes are not always present.
+- Ensure included Taskfiles use the same schema version.
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- Explore the [Variables and Environment Handling](overview/core-concepts/variables-and-environment) page to master passing data between tasks.
+- Learn about [Dependencies and Includes](overview/core-concepts/dependencies-and-includes) to deepen orchestration techniques.
+- Check the [Taskfile Schema Reference](reference/schema) for full details on all task and Taskfile properties.
+- Start writing your own Taskfile and experiment with the simple to advanced syntax.
+
+---
+
+## Related Resources
+
+- [What is Task?](overview/product-intro/what-is-task) — To understand the broader product fit and goals.
+- [Key Benefits and Value Proposition](overview/product-intro/key-benefits) — Why Task stands out for automation.
+- [Templates and Variables Reference](reference/templating) — Power up your Taskfiles with dynamic content.
+
+---
+
+Harness the power of **tasks and Taskfiles** and transform your repetitive commands into streamlined, scalable, and maintainable automation workflows.
+
+Happy automating! 🚀

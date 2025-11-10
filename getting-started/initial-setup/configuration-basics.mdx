@@ -1,0 +1,297 @@
+---
+title: "Configuration Basics"
+description: "Understand the essential configuration files, options, and environment variables that Task uses. Covers how to customize the setup for your workflow, including using .taskrc and environment files for flexible, repeatable builds."
+---
+
+# Configuration Basics
+
+Understand the essential configuration files, options, and environment variables that Task uses. This guide covers how to customize your setup for flexible, repeatable builds using `.taskrc` files and environment variable configurations.
+
+---
+
+## 1. Configuration Files and Their Priority
+
+Task automatically loads configuration files in a well-defined order to merge settings seamlessly. Understanding the location and priority of these files is critical to ensure your configuration takes effect as expected.
+
+### File Locations and Precedence
+
+Task searches for configuration files named `.taskrc.yml` or `.taskrc.yaml` in the following order (highest priority first):
+
+1. **Current Directory** (or directory specified by `--taskfile`/`--entrypoint` flags)
+2. **Parent Directories** ascending up to the root or user home directory
+3. **User's Home Directory** (`$HOME`)
+4. **XDG Config Home** (`$XDG_CONFIG_HOME/task`)
+
+Files in higher priority locations override earlier configurations by merging on top.
+
+### Example Merge:
+
+```yaml [$XDG_CONFIG_HOME/task/.taskrc.yml]
+option_1: foo
+option_2: foo
+option_3: foo
+```
+
+```yaml [$HOME/.taskrc.yml]
+option_1: bar
+option_2: bar
+```
+
+```yaml [$HOME/myproject/.taskrc.yml]
+option_1: baz
+```
+
+Resulting final configuration:
+
+```yaml
+option_1: baz   # from project directory
+option_2: bar   # from user home
+option_3: foo   # from XDG config
+```
+
+<Tip>
+Keep project-specific configuration closest to your project root (for example, inside your project's working directory) to ensure precise control.
+</Tip>
+
+---
+
+## 2. Configuration Options Overview
+
+These options can be set inside any `.taskrc` configuration file and affect Task’s global behavior.
+
+### experiments
+
+Enable experimental Task features.
+
+```yaml
+experiments:
+  feature_name: 1
+  another_feature: 2
+```
+
+See [experiments documentation](../experiments/index.md) for details.
+
+### verbose
+
+Enable verbose output globally.
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+```yaml
+verbose: true
+```
+
+Equivalent CLI flag: `-v, --verbose`
+
+### concurrency
+
+Set how many tasks can run concurrently.
+
+- **Type**: `integer`, minimum 1
+
+```yaml
+concurrency: 4
+```
+
+Equivalent CLI flag: `-C, --concurrency`
+
+---
+
+## 3. Using `.taskrc` Configuration Files
+
+You can create `.taskrc.yml` or `.taskrc.yaml` files in any of the recognized locations to set global preferences that apply consistently across your environment or individual projects.
+
+### Creating a Local Project Config
+
+1. In your project root directory, create a `.taskrc.yml` file.
+2. Add configuration options you wish to override or specify.
+3. When you run Task in this directory (or subdirectories), your configuration merges automatically.
+
+Example:
+
+```yaml
+verbose: true
+concurrency: 2
+experiments:
+  REMOTE_TASKFILES: 1
+```
+
+### Tips for `.taskrc`
+
+- Avoid committing `.taskrc.yml` if it contains user-specific settings; use `.taskrc.yaml.dist` variants if you want defaults shared.
+- `.taskrc` files enable stable, repeatable builds and can simplify onboarding by locking key features.
+
+<Warning>
+Only `.taskrc.yml` or `.taskrc.yaml` files are supported for configuration; other filename variants will be ignored.
+</Warning>
+
+---
+
+## 4. Environment Variables and Configuration
+
+Task's configuration and execution also integrate with environment variables and `.env` files for flexibility.
+
+### Environment Variable Precedence
+
+Environment variables override configuration file variables but come below command-line flags in priority. Task merges user environment variables, `.env` files, and Taskfiles seamlessly.
+
+### Using `.env` Files for Configuration
+
+You can specify one or more `.env` files in configuration with the `dotenv` property.
+
+Example in `.taskrc.yml` or `Taskfile.yml`:
+
+```yaml
+dotenv:
+  - .env
+  - .env.local
+```
+
+Environment variables from these files are parsed and injected before task execution.
+
+### Task Level .env Support
+
+`.env` files can also be specified at the task level to scope environment loading.
+
+```yaml
+tasks:
+  greet:
+    dotenv: ['.env', 'local.env']
+    cmds:
+      - echo "Using $GREETING"
+```
+
+### Overriding Variables
+
+Explicit environment variables set in tasks override `.env` and `.taskrc` variables.
+
+Example:
+
+```yaml
+env:
+  GREETING: Hello
+
+tasks:
+  greet:
+    env:
+      GREETING: Hi
+    cmds:
+      - echo "$GREETING"
+```
+
+Output:
+
+```
+Hi
+```
+
+---
+
+## 5. Practical Configuration Examples
+
+### Example `.taskrc.yml` file with common settings
+
+```yaml
+verbose: true
+concurrency: 3
+experiments:
+  REMOTE_TASKFILES: 1
+```
+
+### Example `Taskfile.yml` referencing `.env` files
+
+```yaml
+version: '3'
+env:
+  ENVIRONMENT: development
+
+dotenv:
+  - .env
+  - .env.${ENVIRONMENT}.local
+
+tasks:
+  start:
+    cmds:
+      - echo "Environment is $ENVIRONMENT"
+```
+
+### Using environment variables and .taskrc together
+
+Set global config variables via `.taskrc.yml`
+
+```yaml
+verbose: false
+concurrency: 2
+```
+
+Customize environment variables locally via `.env`:
+
+```
+DATABASE_URL=postgres://localhost:5432/mydb
+DEBUG=True
+```
+
+Your Taskfile can then use both.
+
+---
+
+## 6. Best Practices and Tips
+
+- **Keep configuration layered:** Use global, user, and project `.taskrc` files to segment your settings.
+- **Leverage `.env` files:** Keep secrets and environment-specific variables outside of version control.
+- **Prioritize explicit variables:** Always define critical vars in the Taskfile or environment for clarity.
+- **Document your config:** Comment your `.taskrc` and `.env` files well to help your team understand the purpose of each setting.
+
+---
+
+## 7. Troubleshooting
+
+### Configuration Not Applied?
+- Confirm `.taskrc.yml` exists in a recognized location.
+- Check for file naming typos.
+- Use verbose output (`-v`) to see which configurations are loaded.
+
+### Environment Variables Not Available?
+- Make sure `.env` files are specified in `dotenv`.
+- Confirm shell environment exports variables before Task runs.
+- Remember, task-level env settings override `.env` and global vars.
+
+### Conflicting Settings
+- Later configuration files override earlier ones.
+- Explicit CLI flags override all.
+
+---
+
+## 8. Summary
+
+This guide introduced how Task uses configuration files and environment variables to create flexible, repeatable automation environments. By understanding the configuration file precedence, environment variable integration, and usage of `.taskrc` and `.env` files, you can tailor Task’s behavior precisely to your workflows.
+
+For full configuration options, especially related to Taskfiles, see the [Configuration Reference](https://taskfile.dev/reference/config).
+
+
+---
+
+## Related Documentation and Next Steps
+
+- [Configuration Reference](https://taskfile.dev/reference/config) — Deep dive into all configuration keys and syntax.
+- [Setting Up Your First Taskfile](https://taskfile.dev/getting-started/initial-setup/setup-taskfile) — How to create and customize tasks.
+- [Variables and Environment Management](https://taskfile.dev/guides/advanced-features-patterns/variables-envs) — Learn advanced environment handling techniques.
+- [Including Other Taskfiles](https://taskfile.dev/guides/advanced-features-patterns/task-dependencies-includes) — Modularizing your configuration for reusability.
+
+
+---
+
+## Quick Reference
+
+| Feature                     | Configuration Key       | Location / Usage                               |
+|-----------------------------|------------------------|-----------------------------------------------|
+| Enable verbose mode          | `verbose`              | `.taskrc.yml` or `Taskfile.yml` global        |
+| Control concurrency          | `concurrency`          | `.taskrc.yml` or `Taskfile.yml` global        |
+| Enable experiments           | `experiments`          | `.taskrc.yml` or `Taskfile.yml` global        |
+| Load environment variables   | `dotenv`               | At root Taskfile or task level                 |
+| Set environment variables    | `env`                  | At root Taskfile or task level                 |
+
+---
+
+With this foundation, customize your Task environment to optimize your automation workflows with confidence.

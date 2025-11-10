@@ -1,0 +1,266 @@
+---
+title: "Installing Task"
+description: "Follow clear, step-by-step instructions to install Task on your platform of choice, whether you’re on Linux, macOS, or Windows. Covers official installers, package managers, and direct binary downloads for maximum convenience."
+---
+
+# Installing Task
+
+Follow these step-by-step instructions to install Task on your platform. Whether you are using Linux, macOS, or Windows, choose the installation method that best fits your workflow—from official package managers to downloading binaries or building from source.
+
+---
+
+## 1. Official Package Managers
+
+These methods are maintained by the Task team and deliver the latest stable releases.
+
+### Linux Package Managers
+
+#### dnf (Fedora, CentOS, Red Hat)
+1. Add the Task repository:
+```shell
+curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.rpm.sh' | sudo -E bash
+```
+2. Install Task:
+```shell
+dnf install task
+```
+
+#### apt (Ubuntu, Debian, Linux Mint)
+1. Add the Task repository:
+```shell
+curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | sudo -E bash
+```
+2. Install Task:
+```shell
+apt install task
+```
+
+### macOS and Linux
+
+#### Homebrew
+Task is available via the official Homebrew tap:
+```shell
+brew install go-task/tap/go-task
+```
+Alternatively, install from the core Homebrew repository:
+```shell
+brew install go-task
+```
+
+### Snap (Linux)
+For Linux distributions supporting Snap classic confinement:
+```shell
+sudo snap install task --classic
+```
+
+### Windows Package Managers
+
+#### WinGet
+Install Task from the community repository:
+```shell
+winget install Task.Task
+```
+
+---
+
+## 2. Community-Maintained Package Managers
+
+> **Warning:** These packages may not always be up-to-date, as maintenance is community-driven.
+
+- **Mise** (cross-platform front end): Use `aqua` or `ubi` backends:
+  ```shell
+  mise use -g aqua:go-task/task@latest
+  mise install
+  ```
+  or
+  ```shell
+  mise use -g ubi:go-task/task
+  mise install
+  ```
+- **Macports** (macOS):
+  ```shell
+  port install go-task
+  ```
+- **pip** (cross-platform):
+  ```shell
+  pip install go-task-bin
+  ```
+- **Chocolatey** (Windows):
+  ```shell
+  choco install go-task
+  ```
+- **Scoop** (Windows):
+  ```shell
+  scoop install task
+  ```
+- **Arch Linux** (pacman):
+  ```shell
+  pacman -S go-task
+  ```
+- **Fedora** (dnf):
+  ```shell
+  dnf install go-task
+  ```
+- **FreeBSD** (pkg):
+  ```shell
+  pkg install task
+  ```
+- **Nix** (cross-platform):
+  ```shell
+  nix-env -iA nixpkgs.go-task
+  ```
+- **pacstall** (Debian, Ubuntu):
+  ```shell
+  pacstall -I go-task-deb
+  ```
+- **pkgx** (macOS, Linux):
+  ```shell
+  pkgx task
+  ```
+  or if pkgx integration is enabled:
+  ```shell
+task
+  ```
+
+---
+
+## 3. Downloading the Binary Directly
+
+1. Visit the [GitHub releases page](https://github.com/go-task/task/releases) for Task.
+2. Download the binary that matches your OS and architecture.
+3. Verify the checksum in `task_checksums.txt` to ensure file integrity.
+4. Place the binary in a directory within your system's `$PATH`, for example:
+   - Linux/macOS: `~/.local/bin` or `/usr/local/bin`
+   - Windows: a directory listed in your PATH environment variable.
+
+<Tip>
+On macOS and Windows, note that `~/.local/bin` and `~/bin` are not added to `$PATH` by default. You may need to add them manually.
+</Tip>
+
+---
+
+## 4. Install Script
+
+For automated or CI environments, use the official install script:
+
+- Installs the latest Task version into `./bin` by default:
+
+```shell
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+```
+
+- To specify a custom directory, for example `~/.local/bin`:
+
+```shell
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
+```
+
+- To install a specific version (e.g., v3.36.0):
+
+```shell
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d v3.36.0
+```
+
+- Combine directory and version:
+
+```shell
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin v3.42.1
+```
+
+---
+
+## 5. Building Task from Source
+
+1. Ensure you have a supported version of [Go](https://golang.org) installed.
+2. Run:
+
+```shell
+go install github.com/go-task/task/v3/cmd/task@latest
+```
+
+3. Optionally specify output directory:
+
+```shell
+env GOBIN=/your/custom/path go install github.com/go-task/task/v3/cmd/task@latest
+```
+
+<Tip>
+For CI environments, prefer using the install script as it downloads pre-built binaries for speed and stability.
+</Tip>
+
+---
+
+## 6. Setting Up Shell Completions
+
+Some installation methods include shell completions automatically. If not, set them up manually.
+
+### Option 1: Load completions dynamically in your shell config (Recommended)
+
+Add the following to the shell configuration file:
+
+```shell
+# Bash (~/.bashrc)
+eval "$(task --completion bash)"
+
+# Zsh (~/.zshrc)
+eval "$(task --completion zsh)"
+
+# Fish (~/.config/fish/config.fish)
+task --completion fish | source
+
+# PowerShell ($PROFILE/Microsoft.PowerShell_profile.ps1)
+Invoke-Expression  (&task --completion powershell | Out-String)
+```
+
+### Option 2: Copy the completion script to the shell completion directory
+
+```shell
+# Bash
+task --completion bash > /etc/bash_completion.d/task
+
+# Zsh
+task --completion zsh  > /usr/local/share/zsh/site-functions/_task
+
+# Fish
+task --completion fish > ~/.config/fish/completions/task.fish
+```
+
+---
+
+## 7. Verification and Troubleshooting
+
+After installation, verify that Task is correctly installed:
+
+```shell
+task --version
+```
+You should see an output similar to:
+
+```
+task v3.xx.x
+```
+
+If you encounter issues:
+
+- Check your system's PATH environment variable to ensure the Task binary location is included.
+- On Unix-like systems, verify binary permissions allow execution: `chmod +x /path/to/task`
+- Use verbose mode for detailed logs: `task --verbose`
+- Consult the [Troubleshooting Setup Issues](https://taskfile.dev/getting-started/first-usage-validation/troubleshooting-setup) guide.
+
+---
+
+## 8. Next Steps
+
+Once installed, explore:
+
+- [Setting Up Your First Taskfile](https://taskfile.dev/getting-started/initial-setup/setup-taskfile) to begin automating tasks.
+- [Running Your First Task](https://taskfile.dev/getting-started/first-usage-validation/first-run).
+- [Taskfile Structure and Best Practices](https://taskfile.dev/guides/getting-started-workflows/taskfile-structure-best-practices) for clean and maintainable configurations.
+
+---
+
+## Summary
+
+This guide equipped you with practical, step-by-step instructions to install Task on Linux, macOS, and Windows using official and community-maintained package managers, binaries, or source builds. Additionally, you learned how to set up shell completions to improve CLI efficiency.
+
+Welcome to your streamlined automation journey with Task!

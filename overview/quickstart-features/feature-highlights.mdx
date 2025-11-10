@@ -1,0 +1,168 @@
+---
+title: "Feature Highlights"
+description: "Quickly scan Task’s core features—declarative task definition, cross-platform support, advanced variable handling, task dependency graphs, file fingerprinting, and more. Understand how these features combine to solve common automation and build challenges."
+---
+
+# Feature Highlights
+
+Explore the core features that make Task a powerful and flexible automation tool. This page quickly introduces Task’s declarative task definitions, cross-platform compatibility, advanced variable handling, dependency graph support, file fingerprinting, and more. Together, these functionalities solve common build and automation challenges with clarity and efficiency.
+
+---
+
+## Declarative Task Definition
+
+With Task, you define your automation tasks declaratively using YAML in a Taskfile. This approach puts readability and maintainability first, allowing you to express complex workflows clearly and consistently.
+
+- **Simple and clear:** Write straightforward commands under task names.
+- **Structured organization:** Group commands logically to model complex workflows.
+- **Reproducible automation:** Declarative syntax means tasks can be reliably rerun and shared.
+
+*Example:*
+
+```yaml
+version: '3'
+tasks:
+  build:
+    cmds:
+      - go build -o myapp ./...
+  test:
+    cmds:
+      - go test ./...
+    deps:
+      - build
+```
+
+Here, the `test` task depends on `build`, ensuring the build completes before tests run.
+
+---
+
+## Cross-Platform Support
+
+Task works seamlessly across different operating systems, including Linux, macOS, and Windows. This means your Taskfile behaves consistently no matter where it runs.
+
+- **Platform-aware execution:** Define platform-specific commands within tasks.
+- **Consistent environment:** Manage environment variables and paths with built-in handling to avoid OS inconsistencies.
+
+*Benefit:* Develop projects that build and run reliably whether on a developer’s local machine or a CI server.
+
+---
+
+## Advanced Variable Handling
+
+Task offers powerful variable management to make your automation dynamic and reusable.
+
+- **Integrated environment variables:** Merge system environment variables with Taskfile variables.
+- **Dotenv support:** Automatically load variables from `.env` files for project-specific secrets or configurations.
+- **Templating:** Use templating expressions to combine variables and customize behavior.
+- **Overrides and precedence:** Control variable scope and overrides with a clear hierarchy.
+
+*Use Case:* Inject API keys securely or switch configuration values by environment without changing your Taskfile.
+
+---
+
+## Task Dependency Graphs
+
+Define dependencies between tasks to create automated execution order and better manage complex workflows.
+
+- **Explicit dependencies:** Each task can declare other tasks it depends on.
+- **Automatic ordering:** Task resolves and runs dependencies in correct sequence.
+- **Parallel execution:** Run independent tasks concurrently where possible.
+
+*Scenario:* For instance, compile sources, run linters in parallel, then package the build—all orchestrated automatically.
+
+---
+
+## File Fingerprinting and Up-to-Date Checks
+
+Task intelligently determines whether a task needs to run by fingerprinting input and output files.
+
+- **Detect changes:** Skip tasks if inputs haven't changed, saving time.
+- **File-based triggers:** Generate or consume files and track their state to optimize build processes.
+- **Force overrides:** Optionally bypass fingerprint checks when a fresh run is necessary.
+
+*Result:* Accelerate your build and automation pipelines by avoiding redundant work.
+
+---
+
+## Additional Notable Features
+
+- **Task Aliases:** Give tasks alternative names for convenience.
+- **Looping and Matrix Builds:** Run tasks over multiple inputs or configurations.
+- **Watch Mode:** Re-run tasks automatically when files change.
+- **Output Grouping and Logging:** Easily manage task output for better readability.
+
+---
+
+## Why These Features Matter
+
+Task’s combination of declarative syntax, robust dependency management, and smart up-to-date checks dramatically reduces the complexity of building and automating workflows. Whether you’re a solo developer or part of a team, these features help you:
+
+- Cut down repetitive manual steps.
+- Maintain clean, scalable automation code.
+- Improve reliability and consistency across platforms.
+- Speed up development cycles and CI pipelines.
+
+---
+
+## Getting Started Preview
+
+Kick off your automation journey by creating a simple Taskfile that leverages these core features. Begin with defining tasks, dependencies, and variables, then escalate to advanced techniques like fingerprinting and conditional executions.
+
+**Prerequisites:**
+
+- Install the Task CLI.
+- Basic familiarity with YAML syntax.
+
+**Next Steps:**
+
+- See [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile) to write your initial Taskfile.
+- Learn [Tasks and the Taskfile](/overview/core-concepts/tasks-and-taskfiles) for deeper insights into task definitions.
+
+---
+
+For a visual conceptual overview of Task's components and workflows, refer to the [Architecture Diagram](/overview/architecture/mermaid-architecture-diagram).
+
+
+---
+
+<AccordionGroup title="Tips & Best Practices for Feature Use">
+<Accordion title="Optimizing Task Dependencies">
+Define only necessary dependencies to keep your task graph clean and execution fast. Avoid circular dependencies, which Task will detect and warn about.
+</Accordion>
+<Accordion title="Using Variables Efficiently">
+Keep environment-specific variables in `.env` files and system variables separate to streamline configuration management and avoid leakage of sensitive data.
+</Accordion>
+<Accordion title="Leveraging Fingerprinting">
+Use file fingerprinting to speed up builds, but remember to use `force` flags for critical tasks that must always run regardless of state.
+</Accordion>
+</AccordionGroup>
+
+
+<Accordion title="Common Pitfalls and How to Avoid Them">
+- Overly complex task dependencies that become hard to maintain.
+- Forgetting platform-specific command differences leading to failures on some OSes.
+- Misplaced variables causing unexpected overrides or empty values.
+- Relying on fingerprinting without verifying file paths or permissions.
+</Accordion>
+
+
+---
+
+## Summary
+Use this page to gain a rapid understanding of Task's key capabilities and how they interlock to provide reliable, scalable, and fast automation solutions.
+
+For hands-on experience, refer to the Getting Started section and explore detailed concept pages listed below.
+
+
+---
+
+## Related Documentation
+- [Tasks and the Taskfile](/overview/core-concepts/tasks-and-taskfiles) — foundational knowledge on task definitions.
+- [Variables and Environment Handling](/overview/core-concepts/variables-and-environment) — deeper dive into advanced variable usage.
+- [Dependencies and Includes](/overview/core-concepts/dependencies-and-includes) — mastering dependency graphs and Taskfile composition.
+- [Fingerprinting and Task Up-to-Date Checks](/concepts/robustness-and-performance/fingerprinting-up-to-date) — optimize task execution.
+- [Feature Flags and Experimental Features](/concepts/integration-extensions/feature-flags-and-experiments) — stay informed on evolving Task features.
+
+---
+
+Start your journey by creating your first Taskfile and leveraging these highlighted capabilities to automate your workflows with confidence and control.

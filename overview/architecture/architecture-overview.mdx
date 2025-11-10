@@ -1,0 +1,157 @@
+---
+title: "High-Level Architecture"
+description: "See how Task's core components work together—from parsing Taskfiles and configuration, to resolving variables and includes, to executing tasks with concurrency and managing output. Gain confidence in Task's reliability and extensibility by understanding its logical, modular design."
+---
+
+# High-Level Architecture
+
+Explore how Task’s core components interact seamlessly to provide a reliable, extensible, and efficient task automation experience. This overview walks you through the flow from loading and parsing Taskfiles, through variable resolution and included Taskfiles, to the execution phase featuring concurrency and output management. Understanding this architecture empowers you to confidently author complex automation workflows and troubleshoot with insight.
+
+---
+
+## Core Components and Workflow
+
+Task’s architecture is designed around modularity and clarity, separating responsibilities into distinct components that together handle task execution from start to finish.
+
+### 1. Taskfile and Configuration Parsing
+
+At startup, Task searches for the root `Taskfile.yml` (or alternatives) in the current directory or upwards in the filesystem tree. It reads this file and any specified included Taskfiles, parsing YAML content into internal representations.
+
+- **Includes Handling:** Task supports including other Taskfiles (local paths or remote URLs) with options for namespaces, variables, aliases, internal flags, flattening, and checksums for integrity verification.
+- **Variables Resolution:** Variables from different scopes (global, includes, task-level, environment) are merged with templating processing to inject dynamic logic.
+
+### 2. Logical Model Construction
+
+Parsed Taskfiles are converted into a structured dependency graph:
+
+- Each **Task** includes commands (`cmds`), dependencies (`deps`), preconditions, sources, generates, platform constraints, and runtime options.
+- Dependencies are resolved recursively, building a directed acyclic graph (DAG) where tasks can run in parallel if no direct ordering is required.
+
+### 3. Task Execution Controller
+
+This module orchestrates task execution:
+
+- **Concurrency Management:** Dependencies run in parallel by default, boosting efficiency. Serial execution is supported via invoking tasks explicitly in commands.
+- **Run Policies:** Tasks may have run modes like `always`, `once`, or `when_changed` to control invocation frequency relative to input variables or prior runs.
+- **Up-to-date Checks:** Fingerprinting using file checksums or timestamps prevents unnecessary task runs, with support for programmatic status and preconditions to gate execution.
+
+### 4. Command Runner and Output Manager
+
+Commands within a task are executed sequentially unless parallelism is explicitly requested. The output management handles how command outputs from concurrent or nested tasks are presented to the user:
+
+- **Output Modes:** `interleaved` (live stdout), `group` (buffered output), and `prefixed` (task name prefixes) control presentation styles.
+- **Interactivity Mode:** Tasks marked as interactive optimize shell behavior for TTY-driven programs.
+
+### 5. Cleanup and Deferred Tasks
+
+Cleanup commands scheduled with `defer` run even if the task’s main commands fail, enabling robust post-execution housekeeping.
+
+---
+
+## Workflow Example: From Taskfile to Execution
+
+1. **User runs `task build`** in a project directory.
+2. Task locates and parses the root `Taskfile.yml`.
+3. Includes are processed, pulling in namespaced external Taskfiles with variable overrides and checksums.
+4. Variables across all scopes and included Taskfiles are resolved and templated.
+5. The task dependency graph is analyzed; dependencies of `build` are prepared.
+6. Fingerprints of source files determine if any tasks can be skipped.
+7. Commands for dependencies run in parallel.
+8. Once dependencies complete, `build` commands execute.
+9. Output is managed live or buffered based on configuration.
+10. Deferred cleanup commands run regardless of success or failure.
+
+---
+
+## Key Architectural Benefits
+
+- **Modular Design:** Clear separation of parsing, variable management, dependency resolution, execution, and output enables extensibility and maintainability.
+- **Concurrent Execution:** Exploiting parallel task dependency execution cuts build times dramatically.
+- **Flexible Inclusion & Namespacing:** Enables reuse and composition of Taskfiles across projects with minimal duplication.
+- **Robust Up-to-Date Detection:** Fingerprinting combined with programmable status/preconditions prevents wasted work without sacrificing correctness.
+- **Customizable Output:** Multiple modes allow users to tailor feedback to their workflows, whether interactive or CI-driven.
+
+---
+
+## Visual Diagram
+
+```mermaid
+flowchart TD
+
+  subgraph Parsing & Configuration
+    A[Load Root Taskfile] --> B[Parse YAML & Build Initial Model]
+    B --> C[Process Includes]
+    C --> D[Resolve Variables & Template]
+  end
+
+  subgraph Dependency Graph
+    D --> E[Build Task Dependency DAG]
+  end
+
+  subgraph Execution Controller
+    E --> F[Up-to-date Checks & Fingerprinting]
+    F --> G[Determine Tasks to Run]
+    G -->|Parallel| H[Run Dependencies]
+    H --> I[Run Target Task]
+    I --> J[Execute Commands Sequentially]
+    J --> K[Handle Deferred Commands]
+  end
+
+  subgraph Output Management
+    J --> L[Manage Output (Interleaved, Grouped, Prefixed)]
+  end
+
+  %% Styling
+  classDef parsing fill:#f9f,stroke:#333,stroke-width:2px
+  classDef execution fill:#bbf,stroke:#333,stroke-width:2px
+  class A,B,C,D parsing
+  class E,F,G,H,I,J execution
+
+```
+
+---
+
+## Practical Tips and Best Practices
+
+- **Organize Includes Thoughtfully:** Use includes and namespaces to modularize your automation logically—for example, separating library tasks or environment-specific taskfiles.
+- **Leverage Variables Strategically:** Take advantage of variable scoping and references to create flexible, reusable Taskfiles.
+- **Define Dependencies to Enable Parallelism:** Structure task dependencies to run in parallel where possible, but sequence explicitly with calls when order matters.
+- **Use Up-to-Date Checks:** Specify sources, generates, and status commands to skip unnecessary work and speed up builds.
+- **Customize Output Modes for Context:** Switch output modes to get clean logs on CI or rich, interactive output locally.
+
+---
+
+## Troubleshooting Common Issues
+
+<AccordionGroup title="Common Issues in Architecture">
+<Accordion title="Included Taskfiles Not Loaded or Commands Not Found">
+Double-check include paths and relative directories. Ensure included Taskfiles have the correct version (3) and that variables or tasks are referenced with proper namespaces or flattened if intended.
+</Accordion>
+<Accordion title="Task Dependencies Running Serially Instead of Concurrently">
+Dependencies run in parallel by default; ensure you are using `deps` rather than sequential calls in `cmds`. If serial ordering is needed, invoke tasks in `cmds` explicitly.
+</Accordion>
+<Accordion title="Output is Messy with Parallel Tasks">
+Try switching the output mode to `group` or `prefixed` for clearer logs, especially in CI or complex concurrent scenarios.
+</Accordion>
+<Accordion title="Variables Not Resolving Correctly in Includes">
+Verify variable precedence and use `ref` for passing structured data. Remember that included Taskfile variables have precedence, so use default function to allow overrides.
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+Now that you understand Task's high-level architecture, you are equipped to dive deeper into related areas:
+
+- [Data Flow: From Taskfile to Execution](/overview/architecture/data-flow) — Gain a stepwise breakdown of data transformations.
+- [Architecture Diagram](/overview/architecture/mermaid-architecture-diagram) — Visualize detailed architecture internals.
+- [Taskfile Structure and Data Models](/concepts/core-architecture/data-representations) — Learn about the fundamental data objects.
+- [Managing Task Dependencies and Includes](/guides/advanced-features-patterns/task-dependencies-includes) — Best practices for scalable workflows.
+
+Explore these to master Task setup and troubleshooting effectively.
+
+---
+
+*Source code and project repository: [https://github.com/clidey/task](https://github.com/clidey/task)*
+
