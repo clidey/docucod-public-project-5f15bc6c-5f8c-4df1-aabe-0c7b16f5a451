@@ -1,0 +1,211 @@
+{
+  "background": {
+    "decoration": "gradient"
+  },
+  "colors": {
+    "dark": "#1E3A8A",
+    "light": "#60A5FA",
+    "primary": "#60A5FA"
+  },
+  "favicon": "/favicon.svg",
+  "fonts": {
+    "family": "Montserrat",
+    "format": "woff2",
+    "source": "https://fonts.gstatic.com/s/googlesansflex/v5/t5sJIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwGpVd4AZzz0v6lJ4qFXNZhGjLvDSkV4USKMo6qQzwliVdHAy9jxTDHg_ugnAakpwGc-cxgUqDCIUI.woff2"
+  },
+  "icons": {
+    "library": "fontawesome"
+  },
+  "logo": {
+    "dark": "./logo/logo.svg",
+    "light": "./logo/logo.svg"
+  },
+  "name": "Task",
+  "navigation": {
+    "tabs": [
+      {
+        "groups": [
+          {
+            "group": "Product Introduction \u0026 Value",
+            "pages": [
+              "overview/product-intro/what-is-task",
+              "overview/product-intro/who-should-use-task",
+              "overview/product-intro/key-benefits"
+            ]
+          },
+          {
+            "group": "Core Concepts \u0026 Terminology",
+            "pages": [
+              "overview/core-concepts/tasks-and-taskfiles",
+              "overview/core-concepts/variables-and-environment",
+              "overview/core-concepts/dependencies-and-includes"
+            ]
+          },
+          {
+            "group": "System Architecture \u0026 Data Flow",
+            "pages": [
+              "overview/architecture/architecture-overview",
+              "overview/architecture/data-flow",
+              "overview/architecture/mermaid-architecture-diagram"
+            ]
+          },
+          {
+            "group": "Feature Overview \u0026 Integration",
+            "pages": [
+              "overview/quickstart-features/feature-highlights",
+              "overview/quickstart-features/integration-ecosystem"
+            ]
+          }
+        ],
+        "tab": "Overview"
+      },
+      {
+        "groups": [
+          {
+            "group": "Installation \u0026 Prerequisites",
+            "pages": [
+              "getting-started/prerequisites-installation/system-requirements",
+              "getting-started/prerequisites-installation/installing-task"
+            ]
+          },
+          {
+            "group": "Initial Configuration \u0026 Setup",
+            "pages": [
+              "getting-started/initial-setup/setup-taskfile",
+              "getting-started/initial-setup/configuration-basics"
+            ]
+          },
+          {
+            "group": "First Usage \u0026 Troubleshooting",
+            "pages": [
+              "getting-started/first-usage-validation/first-run",
+              "getting-started/first-usage-validation/troubleshooting-setup",
+              "getting-started/first-usage-validation/quick-validation"
+            ]
+          }
+        ],
+        "tab": "Getting Started"
+      },
+      {
+        "groups": [
+          {
+            "group": "Getting Started \u0026 Core Workflows",
+            "pages": [
+              "guides/getting-started-workflows/quickstart-taskfile",
+              "guides/getting-started-workflows/typical-workflows",
+              "guides/getting-started-workflows/taskfile-structure-best-practices"
+            ]
+          },
+          {
+            "group": "Advanced Features \u0026 Patterns",
+            "pages": [
+              "guides/advanced-features-patterns/variables-envs",
+              "guides/advanced-features-patterns/task-dependencies-includes",
+              "guides/advanced-features-patterns/conditional-tasks-matrix-for",
+              "guides/advanced-features-patterns/optimizing-performance"
+            ]
+          },
+          {
+            "group": "Integrations \u0026 Real-world Examples",
+            "pages": [
+              "guides/integrations-patterns/ci-cd-integration",
+              "guides/integrations-patterns/task-and-other-tools",
+              "guides/integrations-patterns/community-patterns"
+            ]
+          }
+        ],
+        "tab": "Guides"
+      },
+      {
+        "groups": [
+          {
+            "group": "Core Architecture",
+            "pages": [
+              "concepts/core-architecture/executor-flow",
+              "concepts/core-architecture/data-representations",
+              "concepts/core-architecture/configuration-hierarchy"
+            ]
+          },
+          {
+            "group": "Execution and Automation Models",
+            "pages": [
+              "concepts/execution-models/variables-templating",
+              "concepts/execution-models/environment-management",
+              "concepts/execution-models/preconditions-prompting"
+            ]
+          },
+          {
+            "group": "Robustness and Performance",
+            "pages": [
+              "concepts/robustness-and-performance/fingerprinting-up-to-date",
+              "concepts/robustness-and-performance/output-management",
+              "concepts/robustness-and-performance/concurrency-and-parallelism"
+            ]
+          },
+          {
+            "group": "Integration Patterns and Extensibility",
+            "pages": [
+              "concepts/integration-extensions/includes-and-modularization",
+              "concepts/integration-extensions/platform-specific-tasks",
+              "concepts/integration-extensions/feature-flags-and-experiments"
+            ]
+          }
+        ],
+        "tab": "Concepts"
+      },
+      {
+        "groups": [
+          {
+            "group": "Release Highlights",
+            "pages": [
+              "changelog/release-highlights/version-history",
+              "changelog/release-highlights/new-features-improvements",
+              "changelog/release-highlights/bug-fixes-patches"
+            ]
+          },
+          {
+            "group": "Compatibility and Migration",
+            "pages": [
+              "changelog/compatibility-changes/breaking-changes-migrations",
+              "changelog/compatibility-changes/deprecations",
+              "changelog/compatibility-changes/upgrade-guides"
+            ]
+          }
+        ],
+        "tab": "Changelog"
+      },
+      {
+        "groups": [
+          {
+            "group": "Core Usage \u0026 Troubleshooting",
+            "pages": [
+              "faq/core-usage-troubleshooting/installation-issues",
+              "faq/core-usage-troubleshooting/taskfile-detection-errors",
+              "faq/core-usage-troubleshooting/common-command-errors",
+              "faq/core-usage-troubleshooting/environment-variables-issues"
+            ]
+          },
+          {
+            "group": "Performance \u0026 Optimization",
+            "pages": [
+              "faq/performance-optimization/uptodate-checks-behavior",
+              "faq/performance-optimization/optimizing-task-performance"
+            ]
+          },
+          {
+            "group": "Integrations \u0026 Support",
+            "pages": [
+              "faq/integrations-support/integration-troubles",
+              "faq/integrations-support/getting-help"
+            ]
+          }
+        ],
+        "tab": "FAQ"
+      }
+    ]
+  },
+  "styling": {
+    "codeblocks": "dark",
+    "eyebrows": "breadcrumbs"
+  }
+}
