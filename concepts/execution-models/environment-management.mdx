@@ -1,0 +1,231 @@
+---
+title: "Environment Management and Precedence"
+description: "Understand how environment variables are resolved, merged, and prioritized across Taskfiles, .env files, and the shell. Learn about special experimental features related to environment precedence and the impact on reproducibility."
+---
+
+# Environment Management and Precedence
+
+Understand how environment variables are resolved, merged, and prioritized across Taskfiles, `.env` files, and the shell. Learn about special experimental features related to environment precedence and their impact on reproducibility.
+
+---
+
+## The Role of Environment Variables in Task
+
+Environment variables allow Task users to configure task execution dynamically, customize behavior, and expose runtime information. Task supports environment variables from multiple sources—shell environment, Taskfile declarations, and Dotenv files—merging and prioritizing them to produce the final effective environment for task commands.
+
+This page explains how these environment variables are sourced, merged, and prioritized, as well as experimental features that influence precedence and reproducibility.
+
+
+## How Task Resolves Environment Variables
+
+### Sources of Environment Variables
+
+1. **Shell Environment**: The current process environment variables, inherited by default.
+2. **Taskfile-level `env` block**: Global environment variables defined in the Taskfile, applied to all tasks.
+3. **Task-level `env` block**: Environment overrides or additions specific to a task.
+4. **Dotenv Files**: Files like `.env` that define environment variables, loaded and merged based on Taskfile configuration.
+5. **`TASK_`-prefixed Variables**: Special environment variables prefixed with `TASK_` that override configuration values or control internal behavior.
+
+
+### Step-by-Step Environment Assembly
+
+Each time a task runs, Task assembles the environment variables as follows:
+
+1. **Start with the current shell environment variables** as the baseline.
+2. **Merge the Taskfile global `env` variables** on top.
+3. **Add variables from the task's `env` block, which override duplicates**.
+4. **Process variables injected through Dotenv files**:
+   - Dotenv files configured in the Taskfile or inherited through includes are read.
+   - Variables in dotenv files are merged if not already set by higher precedence sources.
+5. **Incorporate dynamic and special variables** such as `TASK_` prefixed flags and variables injected by Task internally.
+
+
+
+### Experimental Feature: ENV_PRECEDENCE
+
+Task supports an [experimental feature called `ENV_PRECEDENCE`](#feature-flags-and-experimental-features) which changes how environment variable precedence works:
+
+- When disabled (default), environment variables already defined in the shell have higher priority and override Taskfile-defined variables.
+- When enabled, Taskfile-defined environment variables will overwrite existing shell environment variables.
+
+This feature enhances reproducibility by ensuring Taskfiless take precedence, minimizing surprises caused by external environment contamination.
+
+
+## Practical Examples of Environment Precedence
+
+Consider this scenario defined in a Taskfile:
+
+```yaml
+version: '3'
+
+env:
+  FOO: global
+
+tasks:
+  dotenv:
+    dotenv: ['.env']
+    cmds:
+      - echo "$FOO" > dotenv.txt
+
+  dotenv-overridden-by-env:
+    dotenv: ['.env']
+    env:
+      FOO: overridden
+    cmds:
+      - echo "$FOO" > dotenv-overridden-by-env.txt
+
+  no-dotenv:
+    cmds:
+      - echo "$FOO" > no-dotenv.txt
+```
+
+- If the shell environment contains `FOO=external`, with `ENV_PRECEDENCE` disabled, shell’s `FOO` value is used unless overridden explicitly in task `env`.
+- When `ENV_PRECEDENCE` is enabled, the Taskfile’s `FOO` value supersedes the shell environment.
+
+Dotenv files add another layer:
+
+- If `.env` defines `FOO=dotenv`, and the shell doesn’t define `FOO`, the value from `.env` is used unless overridden by task `env`.
+
+
+## Dotenv File Handling
+
+- Dotenv files are loaded in the order specified in the Taskfile’s `dotenv` key.
+- They are processed with templating support, so variables referencing others are expanded.
+- Variables in Dotenv files will not override already set variables in shell or Taskfile unless experimental `ENV_PRECEDENCE` is enabled.
+
+
+## Special Environment Variables
+
+Task recognizes and honors several special environment variables, including:
+
+| Variable              | Purpose                                                             |
+|-----------------------|----------------------------------------------------------------------|
+| `TASK_TEMP_DIR`       | Location of Task’s temporary directory for metadata and checksum.   |
+| `TASK_CORE_UTILS`     | Controls use of internal Go implementations vs system utilities.     |
+| `TASK_REMOTE_DIR`     | Path for remote caching directory.                                  |
+| `TASK_OFFLINE`        | Enables offline mode in the remote experiment (overridden by CLI).   |
+| `FORCE_COLOR`         | Forces colorized output.                                             |
+
+Refer to the [Environment Reference](./environment.md) for the full list and details.
+
+
+## User Flow: How Environment Variables Are Evaluated During Task Execution
+
+<Steps>
+<Step title="1. Gather Process Environment">
+Task starts by capturing the current shell environment variables using the OS environment.
+</Step>
+<Step title="2. Overlay Taskfile Global Environment">
+Variables defined in the Taskfile’s root-level `env` section are merged on top without overwriting existing shell variables, unless `ENV_PRECEDENCE` is enabled.
+</Step>
+<Step title="3. Apply Dotenv Variables">
+If the Taskfile specifies any `.env` files, these are loaded and their variables are merged next, honoring the precedence rules.
+</Step>
+<Step title="4. Overlay Task-Specific Environment">
+Each task’s `env` decl overrides all previous values, ensuring task-level control.
+</Step>
+<Step title="5. Inject Special Task Variables">
+Task injects special variables (e.g., `TASK_EXE`, `TASK_VERSION`) reflecting the execution context.
+</Step>
+<Step title="6. Prepare Final Environment">
+The fully merged environment is passed to the running commands, guaranteeing consistent and expected variable availability.
+</Step>
+</Steps>
+
+
+## Best Practices for Environment Management
+
+- **Explicitly define critical environment variables in the Taskfile `env` or task-level `env` to avoid surprises.**
+- **Use `.env` files for secondary, project-wide environment values, but do not rely on them for overriding shell variables by default.**
+- **Enable the `ENV_PRECEDENCE` experiment if you require reproducible results unaffected by user shell environment contamination.**
+- **Be mindful when running tasks from different directories — paths and environment merging depend on careful Taskfile structure and context.**
+
+
+## Troubleshooting Common Issues
+
+<AccordionGroup title="Common Environment Issues and Solutions">
+<Accordion title="Variables Not Overriding as Expected">
+If environment variables defined in the Taskfile or `.env` files are not overriding shell environment variables:
+
+- Confirm if the `ENV_PRECEDENCE` experiment is enabled if you expect Taskfile variables to take precedence.
+- Use `task --verbose` to inspect the resolved environment.
+- Check for duplicate variable names and unexpected inherits.
+</Accordion>
+<Accordion title="Dotenv File Not Being Loaded">
+- Ensure the `.env` file exists in the expected directory.
+- Check that the Dotenv file path is correctly specified and correctly templated in the Taskfile.
+- Confirm there are no syntax errors in the `.env` file.
+</Accordion>
+<Accordion title="Special Variables Not Recognized">
+- Verify the variable name is correctly prefixed with `TASK_` where required.
+- Check that internal task variables (`TASK_*`) are not shadowed by user environment.
+</Accordion>
+</AccordionGroup>
+
+
+## Feature Flags and Experimental Environment Handling
+
+The EnvPrecedence feature is enabled by setting an environment variable `TASK_X_ENV_PRECEDENCE` to `1` or enabling it via the Taskrc config.
+
+```shell
+export TASK_X_ENV_PRECEDENCE=1
+```
+
+This unlocks:
+
+- **Consistent Taskfile variable precedence**: Variables in Taskfiles always override shell environment.
+- **Improved reproducibility**: Runs are less affected by external shell state.
+
+Be aware that this experimental feature may influence compatibility with existing workflows if you rely on the shell environment always taking precedence.
+
+
+## Summary
+
+Environment variables in Task are a blend of shell environment, Taskfile declarations, and Dotenv files, thoughtfully combined through a strict precedence order. Understanding this mechanism empowers you to write predictable, reproducible automation that behaves consistently across systems and users.
+
+
+---
+
+## Reference Diagram: Environment Variable Resolution Flow
+
+```mermaid
+flowchart TD
+  ShellEnv["Shell Environment Variables"]
+  TaskfileEnv["Taskfile Global 'env' Variables"]
+  DotenvFiles["Dotenv Files (e.g. .env)"]
+  TaskEnv["Task-specific 'env' Variables"]
+  SpecialVars["Special TASK_ Variables"]
+
+  ShellEnv --> MergeShellTaskfile["Merged Env vars (shell with global Taskfile)"]
+  TaskfileEnv --> MergeShellTaskfile
+
+  MergeShellTaskfile --> MergeWithDotenv["Merge Dotenv Variables"]
+  DotenvFiles --> MergeWithDotenv
+
+  MergeWithDotenv --> MergeWithTaskEnv["Merge Task-Specific 'env'"]
+  TaskEnv --> MergeWithTaskEnv
+
+  MergeWithTaskEnv --> MergeWithSpecial["Add Special TASK_ Variables"]
+  SpecialVars --> MergeWithSpecial
+
+  MergeWithSpecial --> FinalEnv["Final environment passed to Task commands"]
+
+  subgraph Environment Precedence Behavior
+    direction LR
+    EnvPrecedenceOff["ENV_PRECEDENCE disabled (default)"]
+    EnvPrecedenceOn["ENV_PRECEDENCE enabled"]
+    EnvPrecedenceOff -. restricts override when merging
+  end
+
+```
+
+---
+
+## Additional Resources
+
+- [Environment Reference](./environment.md) — Detailed list of special Task environment variables.
+- [Variables and Environment Management Guide](../guides/advanced-features-patterns/variables-envs.md) — Deep dive into variable and environment handling.
+- [Feature Flags and Experiments](../concepts/integration-extensions/feature-flags-and-experiments.md) — How to enable and manage experimental features.
+- [Task Execution Lifecycle](../concepts/core-architecture/executor-flow.md) — Understand where environment management fits during task execution.
+
+---
