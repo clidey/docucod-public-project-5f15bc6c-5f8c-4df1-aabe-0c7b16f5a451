@@ -1,0 +1,210 @@
+---
+title: "Running Your First Task"
+description: "Step through running your initial task and understand typical command-line usage. See what success looks like, interpret output, and get a feel for the workflow, ensuring you know what should happen if everything is set up correctly."
+---
+
+# Running Your First Task
+
+Step through running your initial task with Task and understand typical command-line usage. Seeing what success looks like and interpreting the output will give you a clear feel for the workflow and confirm that everything is set up correctly.
+
+---
+
+## 1. Prepare Your Environment
+
+Before running your first task, ensure:
+
+- **You have installed Task** according to the instructions in [Installing Task](/getting-started/prerequisites-installation/installing-task).
+- **You have a Taskfile.yml (or Taskfile.yaml)** with at least one defined task. If you need to create one from scratch, see [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile).
+
+
+## 2. Navigate to Your Project Directory
+
+Open your terminal or Command Prompt, and change the folder to the directory containing your `Taskfile.yml`:
+
+```sh
+cd /path/to/your/project
+```
+
+
+## 3. Run the Default Task
+
+If your Taskfile has a task named `default`, running Task with no arguments executes it:
+
+```sh
+task
+```
+
+If the `default` task is not defined, Task will error or prompt accordingly.
+
+
+## 4. Run a Specific Task by Name
+
+To run a particular task, pass its name as an argument:
+
+```sh
+task <task-name>
+```
+
+For example, if your Taskfile includes a task named `hello`:
+
+```sh
+task hello
+```
+
+
+## 5. Understanding CLI Output
+
+When you run a task, Task displays:
+
+- The commands being executed (unless silent mode is enabled).
+- Colored output by default to separate commands, successes, and errors.
+- A summary message on task completion.
+
+<Tip>
+If you prefer less verbose output, use the `--silent` or `-s` flag.
+</Tip>
+
+
+## 6. Example Walkthrough
+
+Assume you have the following simple Taskfile.yml:
+
+```yaml
+version: '3'
+tasks:
+  hello:
+    cmds:
+      - echo "I am going to write a file named 'output.txt' now."
+      - echo "hello" > output.txt
+    generates:
+      - output.txt
+```
+
+Run this task with:
+
+```sh
+task hello
+```
+
+Expected terminal output:
+
+```
+> echo "I am going to write a file named 'output.txt' now."
+I am going to write a file named 'output.txt' now.
+
+> echo "hello" > output.txt
+
+> Task hello completed successfully ✔
+```
+
+After completion, verify that `output.txt` was created with the content "hello":
+
+```sh
+cat output.txt
+# Output:
+hello
+```
+
+
+## 7. Common Command-Line Options
+
+- `-v` or `--verbose`: Show detailed command output.
+- `-s` or `--silent`: Suppress command echoes.
+- `-d <dir>` or `--dir <dir>`: Run tasks in a different directory.
+- `-t <file>` or `--taskfile <file>`: Specify a different Taskfile name.
+- `-f` or `--force`: Run a task regardless of up-to-date checks.
+- `--watch` or `-w`: Watch files and rerun tasks on changes.
+
+
+## 8. Verifying Success
+
+A successful task run concludes with a message similar to:
+
+```
+> Task <task-name> completed successfully ✔
+```
+
+You should see the expected changes, such as files created, commands executed, or output generated.
+
+
+## 9. Troubleshooting Common Issues
+
+<AccordionGroup title="Troubleshooting Common First Run Issues">
+<Accordion title="Taskfile Not Found">
+If you get an error stating that no Taskfile was found, ensure:
+
+- You are in the directory where `Taskfile.yml` or `Taskfile.yaml` is located.
+- You have not overridden the filename with the `-t` flag incorrectly.
+
+Use `task --help` to verify your command syntax.
+</Accordion>
+<Accordion title="Unknown Task Name">
+If you run `task <name>` but get an "unknown task" error:
+
+- Confirm the task name matches exactly to those defined in your Taskfile.
+- Use `task --list` or `task -l` to see available tasks.
+
+</Accordion>
+<Accordion title="Command Execution Fails">
+If commands inside a task fail:
+
+- Check command syntax in your Taskfile.
+- Run the commands manually in your terminal to isolate the problem.
+- Use `task --verbose` for detailed error output.
+
+</Accordion>
+<Accordion title="Output Not Showing">
+If you see no command output:
+
+- Make sure you are not using silent mode (`-s`).
+- Some shells or environments may suppress output; try running in a different terminal.
+
+</Accordion>
+</AccordionGroup>
+
+
+## 10. Next Steps
+
+Now that you can run your first task:
+
+- Explore creating more complex tasks with dependencies and variables in [Tasks and the Taskfile](/overview/core-concepts/tasks-and-taskfiles).
+- Learn about environment and variable handling for dynamic tasks at [Variables and Environment Handling](/overview/core-concepts/variables-and-environment).
+- Experiment with running tasks in parallel or with watch mode for continuous automation.
+
+
+---
+
+## Summary
+
+Running your first task with Task ensures your setup is correct and introduces you to typical command-line usage and output. This page guides you through running the default or specific tasks, interpreting command output, and troubleshooting common issues, laying the foundation for productive automation workflows.
+
+
+---
+
+## Additional Resources
+
+- [Installing Task](/getting-started/prerequisites-installation/installing-task)
+- [Setting Up Your First Taskfile](/getting-started/initial-setup/setup-taskfile)
+- [Troubleshooting Setup Issues](/getting-started/first-usage-validation/troubleshooting-setup)
+- [Task CLI Reference](/reference/cli/)
+- [Tasks and the Taskfile Structure](/overview/core-concepts/tasks-and-taskfiles)
+
+
+# Frequently Asked Questions
+
+### What happens if I run `task` with no Taskfile?
+You will receive an error indicating Taskfile not found. Confirm your working directory and the Taskfile presence.
+
+### Can I run multiple tasks at once?
+Yes, you can provide multiple task names on the command line, or use dependency graphs to orchestrate.
+
+### How do I get a list of tasks?
+Run `task --list` or `task -l` to see all tasks defined in the current Taskfile.
+
+### How do I customize the output?
+Use the `--output` flag with options `interleaved`, `group`, or `prefixed`. For example: `task -o group hello`.
+
+
+---
+
+For a deeper dive, consider exploring [Common Developer Workflows with Task](/guides/getting-started-workflows/typical-workflows) and [Designing Clean and Maintainable Taskfiles](/guides/getting-started-workflows/taskfile-structure-best-practices).
