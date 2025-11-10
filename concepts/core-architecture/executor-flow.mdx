@@ -1,0 +1,203 @@
+---
+title: "Task Execution Lifecycle"
+description: "Dive into how Task interprets and executes Taskfiles, from parsing definitions to running commands. Learn about task dependency resolution, concurrency handling, error flow, and platform filtering to see how Task achieves reliability and reproducibility."
+---
+
+# Task Execution Lifecycle
+
+Understanding how Task interprets and executes Taskfiles is essential to harness its full automation potential with reliability and efficiency. This guide walks you through the lifecycle of a Task execution—from the initial parsing of Taskfiles to dependency resolution, concurrency handling, error management, and platform filtering. You will gain clarity on how Task ensures that your automation workflows run reproducibly and according to your project’s specific needs.
+
+---
+
+## 1. Starting Execution: The `Run` Method
+
+The core entrypoint when running one or more tasks is the `Run` method of the Executor. It orchestrates the execution flow with several pivot points:
+
+- **Initial Validation:** It first checks if all requested tasks exist and are not internal-only.
+- **Summary Mode:** If enabled, it prints task summaries instead of running them.
+- **Task Grouping:** Tasks are split into those that run normally and those with watch mode enabled.
+- **Concurrent Execution:** Tasks are run in parallel or sequentially based on flags.
+- **Watching:** If any tasks are marked for watch mode, `watchTasks` is invoked to monitor for changes and rerun as needed.
+
+### Example Flow for Running Tasks
+
+```go
+func (e *Executor) Run(ctx context.Context, calls ...*Call) error {
+    // Validate tasks exist and are not internal
+    // Handle summary printout
+    // Split regular and watch-mode tasks
+    // Run regular tasks (parallel or sequential)
+    // Start watching tasks if any
+    return nil
+}
+```
+
+
+## 2. Resolving and Executing a Single Task
+
+The `RunTask` function carries the main responsibility for executing a specific task call. Here's how it processes:
+
+### 2.1 Platform Filtering
+Before any execution, Task checks if the current operating system and architecture match the platforms specified in the task or command. Tasks that do not match are skipped with a verbose notice.
+
+### 2.2 Variable Validation
+Required variables for the task are verified for presence and allowed values to prevent runtime errors.
+
+### 2.3 Call Count Limiting
+Task calls are counted to detect and prevent infinite recursive loops (e.g., cyclic dependencies) by enforcing a maximum call count.
+
+### 2.4 Concurrency Control
+A semaphore mechanism limits how many tasks run simultaneously based on user configuration.
+
+### 2.5 Dependency Execution
+Dependencies (declared in `deps`) are recursively run concurrently before the main task’s commands start.
+
+### 2.6 Up-to-Date Checks
+Using fingerprinting (checksum or timestamp methods), Task determines if the task is already up to date. When true, the task’s commands are skipped unless forced or preconditions require running.
+
+### 2.7 Prompts
+Before running commands, prompt messages can be displayed for user confirmation, allowing safe interruption.
+
+### 2.8 Directory Management
+Task ensures the task’s working directory (as declared) exists or creates it if missing.
+
+### 2.9 Command Execution
+Commands configured under both `cmds` and `deps` are executed in order. Deferred commands (`defer:`) are guaranteed to run after the main commands even if errors occur.
+
+### Example Simplified Flow
+
+```go
+func (e *Executor) RunTask(ctx context.Context, call *Call) error {
+    // Check platform
+    // Validate required variables
+    // Prevent infinite calls limit
+    // Acquire concurrency semaphore
+    // Run dependencies concurrently
+    // Evaluate if task is up-to-date (fingerprinting)
+    // Prompt user if configured
+    // Ensure directory exists
+    // Execute commands and run deferred commands afterwards
+    return nil
+}
+```
+
+## 3. Dependency Handling
+
+Dependencies defined by tasks chain execution with each dependency run as an indirect task call. The dependencies are run concurrently when possible, with concurrency limits respected, ensuring parallel yet controlled workflow execution.
+
+## 4. Command versus Task Invocation
+
+Commands inside a task can be either shell commands or task invocations:
+
+- **Shell Commands:** Items with `cmd:` execute shell instructions with templated variables, environment setup, and output handling.
+- **Task Calls:** Commands with `task:` refer to other tasks and invoke them recursively using `RunTask` with indirect call semantics, allowing nested flows.
+
+## 5. Handling Deferred Commands
+
+Deferred commands (`defer:`) ensure cleanup or post-task commands run even if earlier commands fail. They receive contextual variables like the exit code of the task’s commands.
+
+## 6. Up-to-Date and Fingerprinting Logic
+
+To avoid redundant executions, Task implements a fingerprinting strategy:
+
+- **Method Selection:** The method (checksum or timestamp) can be defined globally or per task.
+- **Fingerprinting Process:** Computes if sources or generated files have changed since last run.
+- **Skipping Execution:** If files are up to date and preconditions are satisfied, commands are skipped.
+
+## 7. Precondition Checks
+
+Tasks can declare `preconditions` as shell commands that must pass successfully for execution to proceed. Failure aborts the task.
+
+## 8. Watching for Changes
+
+Tasks marked with `watch:` or run with `--watch` spawn a watcher that:
+
+- Monitors all source files and directories for changes.
+- Debounces events for efficient reruns.
+- Ignores common directories like `.git`, `.task`, and `node_modules`.
+- Cancels running instances before restarting to ensure fresh execution.
+
+## 9. Concurrency Management
+
+User-configurable concurrency limits throttle how many tasks run simultaneously to prevent overloading system resources.
+
+## 10. Platform Filtering
+
+Both tasks and individual commands can be scoped to run on specific platforms (OS and architecture). Tasks not targeting the current environment are silently skipped.
+
+---
+
+## Visualizing Task Execution Lifecycle
+```mermaid
+flowchart TD
+
+  A[Start: Run tasks] --> B{Validate tasks exist}
+  B -->|No| E[Error: Task not found]
+  B -->|Yes| C{Summary mode?}
+
+  C -->|Yes| D[Print Task Summaries & Exit]
+  C -->|No| F[Split calls by watch mode]
+
+  F --> G[Run regular tasks (parallel or sequential)]
+  G --> H{Any watch tasks?}
+  H -->|No| I[Exit success]
+  H -->|Yes| J[Start watchTasks]
+
+  subgraph RunTask lifecycle
+    J1[Platform filter check]
+    J1 --> J2[Validate required variables]
+    J2 --> J3[Check for cyclic calls]
+    J3 --> J4[Acquire concurrency semaphore]
+    J4 --> J5[Run dependencies concurrently]
+    J5 --> J6{Up-to-date check using fingerprint}
+    J6 -->|Up-to-date & Preconditions met| J10[Skip execution]
+    J6 -->|Needs run| J7[Prompt user]
+    J7 --> J8[Ensure task directory]
+    J8 --> J9[Execute commands]
+    J9 --> J10[Execute deferred commands]
+    J10 --> J11[Release semaphore and complete]
+  end
+
+  J --> J1
+
+  classDef error fill:#f96,stroke:#933,stroke-width:2px,color:#000;
+  class E error;
+
+  classDef decision fill:#fcf,stroke:#933,stroke-width:2px,color:#000;
+  class B,C,H,J6 decision;
+```
+
+---
+
+## Practical Tips for Users
+
+- **Design tasks with clear dependencies:** Use `deps` to orchestrate task sequencing and parallel execution for efficient builds.
+- **Use fingerprinting thoughtfully:** Set appropriate `method:` to avoid unnecessary runs but ensure freshness.
+- **Leverage prompts:** Protect destructive operations by requiring confirmation.
+- **Utilize platform filtering:** Write cross-platform Taskfiles that adapt seamlessly across environments.
+- **Employ deferred commands:** Clean up temporary resources or rollback changes reliably.
+- **Run with `--watch` for interactive development:** Automatically rerun tasks on file changes without manual invocations.
+- **Set concurrency limits:** Prevent system overload in large task graphs or constrained environments.
+
+## Common Pitfalls
+
+- Exceeding the maximum task call count signals circular dependencies; review your `deps` for loops.
+- Neglecting to create directories can cause shell command failures; ensure to set correct `dir:` where needed.
+- Prompts will halt execution unless overridden by `--yes` or `AssumeYes` flags.
+- Fingerprinting requires correct `sources:` and `generates:` paths for accurate up-to-date checks.
+
+---
+
+## Further Reading & Related Documentation
+
+- [Taskfile Structure and Data Models](/concepts/core-architecture/data-representations)
+- [Variables, Templating, and Inheritance](/concepts/execution-models/variables-templating)
+- [Preconditions, Prompts, and Conditional Logic](/concepts/execution-models/preconditions-prompting)
+- [Concurrency and Parallel Task Execution](/concepts/robustness-and-performance/concurrency-and-parallelism)
+- [Fingerprinting and Task Up-to-Date Checks](/concepts/robustness-and-performance/fingerprinting-up-to-date)
+- [Includes and Taskfile Composition](/concepts/integration-extensions/includes-and-modularization)
+- [Watch Mode Usage and Best Practices (Guide)](/guides/getting-started-workflows/typical-workflows)
+
+---
+
+Task’s execution lifecycle balances power, safety, and speed by combining declarative task definition with imperative command execution under carefully crafted control flows and validations. Mastery of this flow empowers you to build automation that is both robust and maintainable.
