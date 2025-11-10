@@ -1,0 +1,168 @@
+---
+title: "Troubleshooting Integrations with Other Tools"
+description: "Provides solutions for common integration pitfalls with CI/CD systems, code editors, and third-party task runners. Covers environment isolation, shell compatibility, and resolving command output issues."
+---
+
+# Troubleshooting Integrations with Other Tools
+
+This document helps users resolve common issues when integrating Task with CI/CD systems, code editors, and other third-party task runners. Integration challenges often arise from environment isolation, shell incompatibilities, or command output handling. Understanding these causes and applying practical solutions ensures smooth, reliable automation across diverse toolchains.
+
+---
+
+## 1. Environment Isolation Issues
+
+### Why does my Task run differently in CI or inside a code editor?
+
+Continuous Integration systems and editors often isolate the environment where commands run, leading to unexpected behavior in Task-powered workflows.
+
+- **Common Causes:**
+  - Missing or overridden environment variables.
+  - Different shell or no shell login initialization.
+  - Working directory discrepancies.
+
+### How to diagnose and fix environment isolation problems
+
+- **Confirm Environment Variables:**
+  Ensure that any environment variables your Task depends on are explicitly set in the CI environment or editor plugin configuration. Some CI systems sanitize or reset environments.
+
+- **Use `.env` or `env:` blocks in your Taskfile:**
+  Define required environment variables within your Taskfile to guarantee availability during task execution.
+
+- **Check the Current Working Directory:**
+  CI runners might execute tasks with a different working directory than expected. Set `dir:` explicitly in your Taskfile tasks or adjust pipelines to the correct directory.
+
+- **Enable Verbose Logging:**
+  Run Task with the `--verbose` flag to see detailed output including environment state. This can highlight missing variables or misconfigurations.
+
+<Tip>
+If your CI system supports it, print the environment (`env` or `printenv`) and working directory (`pwd`) to logs to verify Task’s runtime context.
+</Tip>
+
+---
+
+## 2. Shell Compatibility and Command Execution
+
+### Why do commands run perfectly locally but fail in CI or editors?
+
+Task executes commands in the shell environment. Differences in shell on Windows, CI systems, or editors can lead to command failures.
+
+- **Common Causes:**
+  - Shell commands relying on features or tools not available on the target environment.
+  - Differences in shell syntax (e.g., Bash vs PowerShell).
+  - Commands needing interactive shells or TTYs when unavailable.
+
+### Best practices to ensure shell-agnostic task commands
+
+- **Use Cross-Platform Tools:**
+  Prefer commands and tools that are consistent across platforms. Task now includes built-in Windows core utilities, eliminating many cross-platform gaps.
+
+- **Explicitly Set Shells or Commands:**
+  Use explicit shell or command invocations if you need shell-specific behavior (e.g., `bash -c '...'`).
+
+- **Avoid Interactive Prompts in CI:**
+  CI pipelines typically have no TTY. Avoid tasks that prompt interactively, or use the `--yes` flag to skip prompts.
+
+- **Test Commands in the Target Environment:**
+  Validate task commands manually in the CI environment or editor shell to catch incompatibilities early.
+
+- **Use Task’s Dry Run and Verbose Modes:**
+  `--dry` allows you to see what commands will run without executing them. Combined with `--verbose`, this helps debug problematic commands.
+
+---
+
+## 3. Resolving Command Output Issues
+
+### Why is task command output missing, jumbled, or incorrectly formatted in CI or editors?
+
+Output problems can stem from buffering differences, output modes, or colored output incompatibilities.
+
+- **Causes to Consider:**
+  - Output buffering delaying or mingling stdout/stderr.
+  - Output modes (`group`, `prefixed`, `interleaved`) affecting log processing.
+  - Color codes or ANSI escape sequences unsupported or undesired in target environment.
+
+### How to achieve reliable and clear output integration
+
+- **Choose the Right Output Mode:**
+  Adapt your Taskfile’s output style to your environment. For CI pipelines, `group` mode with optional start/end markers works well. For editors, `interleaved` or `prefixed` can provide parallel clarity.
+
+- **Disable Colored Output if Unsupported:**
+  Set environment variables or Task configuration to disable color codes if they break log readability.
+
+- **Use Group Markers for CI:**
+  Enable grouping to allow some CI systems to collapse or expand task output sections.
+
+- **Check Logs for Partial Output:**
+  If output appears truncated, verify the buffer flush behaviors and ensure Task and the CI system are configured to handle continuous output.
+
+- **Run Tasks with `--verbose`:**
+  This can expose hidden execution details and the flow of output streams.
+
+---
+
+## 4. Common Integration Pitfalls & Solutions
+
+| Issue                                         | Cause                         | Solution                                                      |
+|-----------------------------------------------|-------------------------------|---------------------------------------------------------------|
+| Task runs fine locally but errors in CI       | Missing env vars or wrong dir  | Specify env explicitly, set `dir:` in tasks, print env in CI  |
+| Prompt commands hang or fail in pipeline      | No TTY available               | Use `--yes` or avoid interactive prompts                      |
+| Commands with cross-platform issues fail      | Windows vs Unix commands       | Use Task’s built-in core utilities, or make commands cross-platform |
+| Parallel task output is mixed or garbled      | Output mode not set appropriately | Use `--output=group` or `--output=prefixed`                   |
+| Task not found when called inside editor      | Different working directory    | Confirm editor runs Task in project root or set correct dir   |
+
+---
+
+## 5. Step-by-Step Troubleshooting Workflow
+
+<Steps>
+<Step title="Verify Environment Variables and Working Directory">
+Confirm all required environment variables and that the current directory are properly set inside CI/editor environment.
+</Step>
+<Step title="Test Commands Manually in Target Environment">
+Replicate task commands directly in the shell used by the CI or editor to catch shell-specific or path issues.
+</Step>
+<Step title="Run Task with Verbose and Dry Flags">
+Use `task --verbose --dry` to review commands and environment interactions without actually changing state.
+</Step>
+<Step title="Adjust Taskfile Output Mode and Color Settings">
+Experiment with different output modes (`group`, `prefixed`, `interleaved`) and color settings to improve readability.
+</Step>
+<Step title="Check for Interactive Command Usage">
+Ensure no interactive prompts are run in non-interactive environments; use `--yes` to override prompts if safe.
+</Step>
+</Steps>
+
+---
+
+## 6. Helpful Tips & Best Practices
+
+- Define all environment variables your tasks require in the Taskfile using the `env:` keyword to avoid surprises.
+- Use the `dir:` attribute in your Taskfile tasks to enforce consistent working directories.
+- Take advantage of Task’s built-in Windows core utilities for cross-platform scripting.
+- Avoid interactive commands without prep flags in automated pipelines.
+- Use verbose mode during CI runs to capture detailed logs useful for debugging.
+- Adjust output modes based on the target environment; CI systems often benefit from grouped outputs.
+
+---
+
+## 7. Additional Resources
+
+- [Integrating Task into CI/CD Pipelines](/guides/integrations-patterns/ci-cd-integration)
+- [Task with Other Tools (Package Managers, Linters, Formatters)](/guides/integrations-patterns/task-and-other-tools)
+- [Environment Variable & Variable Substitution Issues FAQ](/faq/core-usage-troubleshooting/environment-variables-issues)
+- [Why Isn't My Task Running? Understanding Up-to-date Checks](/faq/performance-optimization/uptodate-checks-behavior)
+
+---
+
+## 8. Getting More Help
+
+If the issue persists:
+
+- Review the Task verbose logs and CI job logs closely.
+- Search community forums, GitHub Issues, or Discord for similar problems.
+- Consult the official [Getting Help & Community Support FAQ](/faq/integrations-support/getting-help).
+- Consider opening an issue providing your Taskfile snippet, environment details, and error logs.
+
+<Tip>
+Sharing clear logs, minimal Taskfiles, and exact environment information significantly speeds up community and support response.
+</Tip>
