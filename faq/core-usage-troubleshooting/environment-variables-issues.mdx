@@ -1,0 +1,167 @@
+---
+title: "Environment Variable & Variable Substitution Issues"
+description: "Troubleshooting advice for users facing problems with environment variable precedence, variable templating, and task parameterization. Clarifies how Task merges variables, applies environment overrides, and resolves templating issues in Taskfile execution."
+---
+
+# Environment Variable & Variable Substitution Issues FAQ
+
+This FAQ helps you resolve common problems related to environment variables, variable templating, and task parameterization when using Task. It clarifies how Task merges environment values from different sources, the precedence rules that apply, and typical pitfalls users face when substituting variables within Taskfiles.
+
+---
+
+## 1. Understanding Environment Variable Precedence
+
+### Q: How does Task determine which environment variable value to use when the same key exists in multiple places?
+
+Task gathers environment variables from multiple sources: the system shell environment, the global `env` block in the Taskfile, task-specific `env` entries, and optionally dotEnv files. By default, system environment variables have higher precedence than Taskfile `env` variables unless the experimental feature `ENV_PRECEDENCE` is enabled.
+
+This means if you have `FOO=bar` in your shell and `FOO=baz` in a task’s `env` block, Task will use `bar` by default, overriding Taskfile configurations. Enabling `ENV_PRECEDENCE` reverses this, allowing Taskfile `env` variables to override OS environment variables.
+
+### Q: What is the `ENV_PRECEDENCE` experiment, and how does it affect environment variables?
+
+`ENV_PRECEDENCE` is an experimental feature that changes environment variable precedence so Taskfile `env` variables take precedence over OS environment variables.
+
+Enable it by setting the environment variable:
+
+```bash
+export TASK_X_ENV_PRECEDENCE=1
+```
+
+Example:
+
+```yaml
+version: '3'
+tasks:
+  example:
+    env:
+      KEY: 'taskfile_value'
+    cmds:
+      - echo "$KEY"
+```
+
+- Without the experiment: Running `KEY=some task example` prints `some`.
+- With the experiment enabled: It prints `taskfile_value`.
+
+If you still need the OS environment variable under this experiment, use the template function `{{env "KEY"}}` inside commands.
+
+---
+
+## 2. Variable Substitution and Templating Challenges
+
+### Q: Why do some variables not expand correctly in my commands?
+
+Variables defined in `vars` or `env` support references using the templating syntax `{{.VAR_NAME}}`. However, improper referencing or missing variables can lead to empty or literal outputs.
+
+- Ensure variable names are spelled correctly and defined within scope.
+- Variables inside `env` support static values and shell commands via the `sh` key to dynamically compute values.
+- Dotenv files and inheritance order affect variable availability.
+
+Example of dynamic substitution:
+
+```yaml
+vars:
+  BAZ:
+    sh: echo baz
+
+env:
+  BAZ: "{{.BAZ}}"
+```
+
+This will substitute `BAZ` in environment with the output of the shell command.
+
+### Q: How does variable inheritance work between included Taskfiles and tasks?
+
+Variables and environment variables flow hierarchically:
+
+- Global vars/env defined in the root Taskfile
+- Dotenv files merged at global and task levels
+- Task-specific vars and env override or augment global values
+- Variables passed explicitly on task invocation override inherited values
+
+Examples from test data:
+
+- Calling a task with `vars:` overrides global variables.
+- Using `dotenv:` at task or include level merges env vars from `.env` files accordingly.
+
+---
+
+## 3. Common Issues and Resolutions
+
+### Q: My environment variables set in the Taskfile's `env` don't seem to take effect. What should I check?
+
+- Verify if the OS environment variable with the same key already exists. By default, OS variables take precedence.
+- Confirm whether the `ENV_PRECEDENCE` experiment is enabled if you want Taskfile env to override OS variables.
+- Check for variable type compatibility. Task only accepts string, bool, int, or float values for environment variables; others are ignored.
+- Ensure variable templating uses the correct syntax and variables are defined.
+
+### Q: What if a variable used in templating does not exist?
+
+The template will resolve to an empty string, potentially breaking your command.
+
+**Tip:** Use the `default` function in templates to provide fallback values:
+
+```yaml
+MY_VAR: '{{.MY_VAR | default "fallback"}}'
+```
+
+### Q: How can I debug what variables and environment Task is setting at runtime?
+
+Create a task with commands that print variable values explicitly:
+
+```yaml
+tasks:
+  debug:
+    cmds:
+      - echo "FOO=$FOO"
+      - echo "BAR=$BAR"
+      - env | grep TASK_
+```
+
+Use this to verify variable values and environment inheritance.
+
+---
+
+## 4. Best Practices and Tips
+
+- **Avoid name collisions:** Use consistent variable naming and avoid clashing with OS environment variables unless intentionally overriding.
+- **Prefer explicit passing of vars/env for included Taskfiles** to maintain predictable variable scopes.
+- **Use dynamic shell variables (`sh`) judiciously** to compute values at runtime, especially for environment variables requiring commands.
+- **Enable `ENV_PRECEDENCE` experiment only when necessary**, as it changes core behavior and may impact existing automation.
+- **Leverage the template functions like `env` and `default`** to write robust and readable variable references.
+
+---
+
+## 5. Troubleshooting Steps
+
+<Steps>
+<Step title="Check for Existing OS Environment Variables">
+Run `env` or `printenv` in your shell to see if the variable already exists and might override Taskfile settings.
+</Step>
+<Step title="Test Variable Expansion in a Simple Task">
+Create a minimal Taskfile that echoes variables to isolate substitution issues.
+</Step>
+<Step title="Enable Env Precedence Experiment Temporarily">
+Try setting `TASK_X_ENV_PRECEDENCE=1` locally to see how variable precedence changes impact your setup.
+</Step>
+<Step title="Validate Variable Types">
+Ensure all environment variables are one of the allowed types: string, bool, int, or float.
+</Step>
+<Step title="Use Template Functions for Fallbacks">
+Apply the `default` template function to avoid empty substitutions when variables might be missing.
+</Step>
+<Step title="Check Dotenv and Includes Merging">
+Review dotenv and included Taskfile usages to verify variables are merged in the expected order.
+</Step>
+</Steps>
+
+---
+
+## 6. References and Further Reading
+
+- [Environment Reference](./environment.md) — Detailed environment variable settings.
+- [Env Precedence Experiment](./env-precedence.md) — Understand and enable `ENV_PRECEDENCE`.
+- [Variables and Environment Management Guide](../../guides/advanced-features-patterns/variables-envs.md) — Best practices and advanced use cases.
+- [Variable Templating and Inheritance](../../concepts/execution-models/variables-templating.md) — Deep dive into how variables are templated and passed.
+- [Taskfile Structure and Best Practices](../../guides/getting-started-workflows/taskfile-structure-best-practices.md) — Guidance for clean, maintainable Taskfiles.
+
+---
